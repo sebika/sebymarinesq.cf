@@ -1,0 +1,274 @@
+<html>
+
+<head>
+
+	<title>Barnsley fern</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:5;}</style>
+<p align = 'center'>
+<canvas id ="gameCanvas"></canvas>
+</p>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+var m_x, m_y;
+const fps = 1000;
+const size = 0.5;
+
+var x = 0, y = 0, x_new, y_new;
+
+var r = random_number(3);
+
+window.onload = function() 
+{
+	init();
+	colorRect(0,0,canvas.width,canvas.height,'black');
+	setInterval(fern, 1000/fps);	
+}
+
+function init()
+{
+	var myWidth = 650;
+	var myHeight = 650;
+	canvas.width = myWidth;
+	canvas.height = myHeight;
+}
+
+function fern()
+{
+	drawEverything();
+}
+
+function drawEverything() 
+{
+	for(var i = 1; i <= 100; i++)
+	{
+		var x1,y1;
+
+		if(r == 1)
+		{
+			defaultPoint();
+			x1 = map(x,-2.1820,2.6558,-canvas.width/2,canvas.width/2);
+			y1 = map(y,0,9.9983,0,canvas.height);
+		}
+		else if(r == 2)
+		{
+			Thelypteridaceae();
+			x1 = map(x,-2,2,-canvas.width/2,canvas.width/2);
+			y1 = map(y,0,7,0,canvas.height);
+		}
+		else 
+		{
+			leptosporangiate();
+			x1 = map(x,-1.65,1.65,-canvas.width/2,canvas.width/2);
+			y1 = map(y,0,6,0,canvas.height);
+		}
+		
+		
+
+		colorCircle(x1,y1,size,"#7CFC00");
+		
+	}
+	console.log(x,y);
+}
+
+function leptosporangiate() 
+{
+	var num = random_number(100);
+	
+	if(num == 2)
+	{
+		x_new = 0;
+		y_new = 0.25 * y - 0.14;
+	}
+	else if(num <= 9)
+	{
+		x_new = 0.09 * x - 0.28 * y;
+		y_new = 0.3 * x + 0.11 * y + 0.6;
+	}
+	else if(num <= 16)
+	{
+		x_new = -0.09 * x + 0.28 * y;
+		y_new = 0.3 * x + 0.09 * y + 0.7;
+	}
+	else
+	{
+		x_new = 0.85 * x + 0.02 * y;
+		y_new = -0.02 * x + 0.83 * y + 1;
+	}
+
+	x = x_new;
+	y = y_new;
+}
+
+function Thelypteridaceae() 
+{
+	var num = random_number(100);
+	
+	if(num == 2)
+	{
+		x_new = 0;
+		y_new = 0.25 * x - 0.4;
+	}
+	else if(num <= 9)
+	{
+		x_new = 0.035 * x - 0.2 * y - 0.09;
+		y_new = 0.16 * x + 0.04 * y + 0.02;
+	}
+	else if(num <= 16)
+	{
+		x_new = -0.04 * x + 0.2 * y + 0.083;
+		y_new = 0.16 * x + 0.04 * y + 0.12;
+	}
+	else
+	{
+		x_new = 0.95 * x + 0.005 * y - 0.002;
+		y_new = -0.005 * x + 0.93 * y + 0.5;
+	}
+
+	x = x_new;
+	y = y_new;
+}
+
+function defaultPoint() 
+{
+	var num = random_number(100);
+	
+	if(num == 1)
+	{
+		x_new = 0;
+		y_new = 0.16 * y;
+	}
+	else if(num <= 8)
+	{
+		x_new = -0.15 * x + 0.28 * y;
+		y_new = 0.26 * x + 0.24 * y + 0.44;
+	}
+	else if(num <= 15)
+	{
+		x_new = 0.2 * x - 0.26 * y;
+		y_new = 0.23 * x + 0.22 * y + 1.6;
+	}
+	else
+	{
+		x_new = 0.85 * x + 0.04 * y;
+		y_new = -0.04 * x + 0.85 * y + 1.6;
+	}
+
+	x = x_new;
+	y = y_new;
+}
+
+function map(nr, l1, r1, l2, r2)
+{
+	var p;
+	p = (nr - l1) * 100 / (r1 - l1);
+	return l2 + p / 100 * (r2 - l2);
+}
+
+function showMessage(x_coord,y_coord,msg)
+{
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = '50px Segoe UI';
+	canvasContext.textAlign = 'center';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function showMessage1(x_coord,y_coord,msg)
+{	
+	canvasContext.moveTo(x_coord,0);
+	canvasContext.lineTo(x_coord,canvas.height);
+	//canvasContext.stroke();
+	canvasContext.textAlign = 'start';
+	
+	canvasContext.moveTo(0,y_coord);
+	canvasContext.lineTo(canvas.width,y_coord);
+	//canvasContext.stroke();
+	canvasContext.textBaseline = 'hanging'; 
+	
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = '50px Segoe UI';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+	X += canvas.width/2;
+	Y = canvas.height - Y;
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, drawColor)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==37)
+	{
+		alert("left");
+	}
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+
+</script>
+</body>
+</html>

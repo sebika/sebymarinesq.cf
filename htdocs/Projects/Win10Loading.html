@@ -1,0 +1,247 @@
+<html>
+
+<head>
+
+	<title>Windows 10 loading</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:0;  overflow:hidden;}</style>
+<p align = 'center'>
+<canvas id ="gameCanvas"></canvas>
+</p>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+var m_x, m_y;
+const fps = 1000;
+const R = 85;
+const r = 5;
+const nr = 6;
+const alpha = (360 / (nr * 4)) * Math.PI / 180;
+const SPD = 0.008;
+
+
+var C = [];
+var acc = [];
+var speed = [];
+var px = [];
+var py = [];
+var semn = [];
+var u = [];
+var valid = [];
+var u_valid = [];
+
+var x, y;
+
+
+window.onload = function() 
+{
+	init();
+	window.addEventListener("resize", init, false);
+	setInterval(loading, 1000/fps);	
+}
+
+function init()
+{
+	var myWidth = window.innerWidth;
+	var myHeight = window.innerHeight;
+	canvas.width = myWidth;
+	canvas.height = myHeight;
+	for(var i = 0; i < nr; i++)
+	{
+		C[i] = 0;
+		acc[i] = 1;
+		semn[i] = 1;
+		speed[i] = SPD;
+		u[i] = 0;
+		valid[i] = 0;
+		u_valid[i] = 0;
+	}
+	findPoints();
+}
+
+function loading()
+{
+	drawEverything();
+	moveEverything();
+}
+
+function moveEverything() 
+{
+	var ang;
+	for(var i = 0; i < nr; i++)
+	{
+		C[i] += speed[i];
+		ang = (alpha * (i + 2*nr) + C[i]) * 180 / Math.PI;
+		ang %= 360;
+		if((ang > 270  || ang < 180 ) && u[i] == 0) 
+		{
+			u[i] = 1;
+			speed[i] *= 2.5;
+		}
+		else if((ang > 175 && ang < 185) && u[i] == 1)
+		{
+			u[i] = 0;
+			speed[i] = SPD;
+		}
+		if(ang > 85 && ang < 95 && u_valid[i] == 0) 
+		{
+			valid[i] ++;
+			u_valid[i] = 1;
+		}
+		if(ang > 100) u_valid[i] = 0;
+	}
+	/*var z;
+	for(var i = 0; i < nr; i++)
+	{
+		px[i] +=  0.5 * semn[i];
+		if(px[i] > R || px[i] < - R)
+		{
+			semn[i] *= -1;
+			px[i] += 0.01 * semn[i];
+		}
+		py[i] = -1 * semn[i] * Math.sqrt(R*R - px[i]*px[i]);
+	}	*/
+	/*var ang;
+	for(var i = 0; i < nr; i++)
+	{
+		C[i] += speed;
+		ang = (alpha * (i + 2*nr) + C[i]) * 180 / Math.PI;
+		ang %= 360;
+		if(ang > 270 || ang < 180) C[i] *= 1.007;
+		if(ang <= 180 && ang >= 178) 
+		{
+			C[i] = 0;
+		}
+	}*/
+}
+
+function drawEverything() 
+{
+	
+	colorRect(0,0,canvas.width,canvas.height,'purple');
+	showMessage();
+	/*for(var i = 0; i < nr; i++)
+		colorCircle(px[i] + canvas.width / 2,py[i] + canvas.height / 2,r,'white');
+	*/	
+	for(var i = 2 * nr; i < 3 * nr; i++)
+	{
+		x = R * Math.cos(alpha * i + C[i - 2*nr]) + canvas.width / 2;
+		y = R * Math.sin(alpha * i + C[i - 2*nr]) + canvas.height / 2;
+		if(valid[i - 2*nr] % 3 != 0) colorCircle(x,y,r,'white');
+		/*x = R * Math.cos(alpha * i + C[i - 2*nr] * acc[i - 2*nr]) + canvas.width / 2;
+		y = R * Math.sin(alpha * i + C[i - 2*nr] * acc[i - 2*nr]) + canvas.height / 2;
+		if(x >= canvas.width / 2 || y >= canvas.height / 2)
+		{
+			acc[i - 2*nr] *= 1.001;
+			x = R * Math.cos(alpha * i + C[i - 2*nr] * acc[i - 2*nr]) + canvas.width / 2;
+			y = R * Math.sin(alpha * i + C[i - 2*nr] * acc[i - 2*nr]) + canvas.height / 2;
+		}
+		else
+		{
+			acc[i - 2*nr] = 1;
+		}*/
+		
+		/*x = R * Math.cos(alpha * i + C[i - 2*nr]) + canvas.width / 2;
+		y = R * Math.sin(alpha * i + C[i - 2*nr]) + canvas.height / 2;*/
+	}
+}
+
+function showMessage()
+{
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = '50px Segoe UI';
+	canvasContext.textAlign = 'center';
+	canvasContext.fillText("Loading", canvas.width/2, canvas.height / 2 + 2*R);
+}
+
+function findPoints()
+{
+	for(var i = 2 * nr; i < 3 * nr; i++)
+	{
+		x = R * Math.cos(alpha * i);
+		y = R * Math.sin(alpha * i);
+		px[i - 2*nr] = x;
+		py[i - 2*nr] = y;
+	}
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, drawColor)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+/*function keyPush(evt) 
+{
+	if(evt.keyCode==37)
+	{
+		alert("left");
+	}
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}*/
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+
+</script>
+</body>
+</html>

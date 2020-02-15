@@ -1,0 +1,202 @@
+<html>
+
+<head>
+
+	<title>Sandpiles</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:5;  overflow:hidden;}</style>
+<p align = 'center'>
+<canvas id ="gameCanvas" width="640" height ="640"></canvas>
+</p>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+var m_x, m_y;
+const fps = 1000;
+const n = 99;
+const size = canvas.width / n;
+const G = pow(2,16);
+const m = (n+1)/2;
+
+var p = [], ok = 0;
+
+window.onload = function() 
+{
+	init();
+	
+	//window.addEventListener("resize", init, false);
+	
+	setInterval(game, 1000/fps);
+}
+
+function init()
+{
+	colorRect(0,0,canvas.width,canvas.height,"green");
+	for(var i = 1; i <= n; i++)
+	{
+		p[i] = [];
+		for(var j = 1; j <= n; j++)
+			p[i][j] = 0;
+	}
+	p[m][m] = G;
+	mat();
+	drawEverything();
+	
+}
+
+function game()
+{
+	drawEverything();
+	moveEverything();
+}
+
+function moveEverything() 
+{
+	for(var i = 1; i <= n; i++)
+		for(var j = 1; j <= n; j++)
+			if(p[i][j] > 3)
+			{
+				p[i][j] -= 4;
+				p[i-1][j] ++;
+				p[i][j-1] ++;
+				p[i][j+1] ++;
+				p[i+1][j] ++;
+			}
+}
+
+function drawEverything() 
+{
+	var cul;
+	for(var i = 1; i <= n; i++)
+	{
+		for(var j = 1; j <= n; j++)
+		{
+			if(p[i][j] > -1)
+			{
+				if(p[i][j] == 0) cul = "black";
+				else if(p[i][j] == 1) cul = "yellow";
+				else if(p[i][j] == 2) cul = "blue";
+				else cul = "red";
+				colorRect( (i-1)*size, (j-1)*size, size, size, cul);
+			}
+		}
+	}
+}
+
+function showMessage(x_coord,y_coord,msg)
+{
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = '50px Segoe UI';
+	canvasContext.textAlign = 'center';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function showMessage1(x_coord,y_coord,msg)
+{	
+	canvasContext.moveTo(x_coord,0);
+	canvasContext.lineTo(x_coord,canvas.height);
+	//canvasContext.stroke();
+	canvasContext.textAlign = 'start';
+	
+	canvasContext.moveTo(0,y_coord);
+	canvasContext.lineTo(canvas.width,y_coord);
+	//canvasContext.stroke();
+	canvasContext.textBaseline = 'hanging'; 
+	
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = '50px Segoe UI';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, drawColor)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==37)
+	{
+		alert("left");
+	}
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+function pow(a, b)
+{
+	var nr = 1;
+	for(var i = 1; i <= b; i++)
+		nr = nr * a;
+	return nr;
+}
+
+function mat()
+{
+	
+}
+
+</script>
+</body>
+</html>

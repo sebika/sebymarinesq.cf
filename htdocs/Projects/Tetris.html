@@ -1,0 +1,831 @@
+<html>
+
+<head>
+
+	<title>Tetris</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<p align = "center">
+<canvas id ="gameCanvas" width="311" height ="621"></canvas>
+</p>
+
+<script>
+
+const background = "#0D1021"
+
+const colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+
+var canvas;
+var canvasContext;
+var size = 30;
+const n = 20;
+const m = 10;
+
+var delay = 120;
+var D = 0;
+var difficulty = 1;
+
+var nr = random_number(7);  // nr piesei generate
+
+var cul = []; // culoarea cubuletului
+var a = [];  
+/* a[i][j] = starea cubuletului (i,j)  
+	0 = nu face parte dintr-o piesa
+	1 = sta pe loc
+	2 = coboara
+*/
+
+var l = -1, c = -1;
+var End = 0;
+var score = 0;
+var xd = 0;
+var snooze1 = 0, snooze2 = 0;
+var freeze = 0;
+
+window.onload = function() {
+	
+	canvas = document.getElementById('gameCanvas');
+	canvasContext = canvas.getContext('2d');
+	
+	// frames per second
+	var fps = 2000;
+	for(var i = 0; i< n; i++)
+	{
+		a[i] = [];
+		cul[i] = [];
+		for(var j = 0; j< m; j++)
+		{
+			a[i][j] = 0;
+			cul[i][j] = 0;
+		}
+	}
+	spawnPiece();
+	document.addEventListener("keydown",keyPush);
+	setInterval(tetris, 1000/fps);
+}
+
+function tetris() 
+{
+	if(freeze == 0)
+	{
+		snooze1++;
+		if(D == 0)
+		{
+			if(End == 1)
+			{
+				delay = 120;
+				colorRect(0,0,canvas.width,canvas.height,"#0D1021");
+				canvasContext.fillStyle = 'white';
+				canvasContext.font = '30px Verdana';
+				canvasContext.textAlign = 'center';
+				canvasContext.fillText("SCORE", canvas.width/2, 100);
+				canvasContext.fillText(score, canvas.width/2, 150);
+				canvasContext.font = '20px Verdana';
+				canvasContext.fillText("Press enter to restart", canvas.width/2, canvas.height/2 + 50);
+				return ;
+			}
+			else
+			{
+				D = delay;
+				drawGrid();
+				setColors();
+				drawCells();
+				showScore();
+				moveEverything();
+			}
+		}
+		else D --;
+	}
+	else
+	{
+		colorRect(0,0,canvas.width,canvas.height,"#0D1021");
+		canvasContext.fillStyle = 'white';
+		canvasContext.font = '30px Verdana';
+		canvasContext.textAlign = 'center';
+		canvasContext.fillText("SCORE", canvas.width/2, 100);
+		canvasContext.fillText(score, canvas.width/2, 150);
+		canvasContext.font = '20px Verdana';
+		canvasContext.fillText("Press enter to continue", canvas.width/2, canvas.height/2 + 50);
+	}
+}
+
+function showScore()
+{
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = 'bold 20px Verdana';
+	canvasContext.fillText(score, canvas.width-90, 23);
+}
+
+function endScreenCheck()
+{
+	var u = 0;
+	for(j = 0; j < m; j++)
+		if(a[1][j] > 0) u = 1;
+	return u;
+}
+
+function moveEverything()
+{
+	var u;
+	u = valid_moveDown();
+	if(u==0)
+	{
+		for(var i = 0; i<n; i++)
+			for(var j = 0; j<m; j++)
+				if (a[i][j] > 0) a[i][j] = 1;
+		var remove;
+		remove = checkRow();
+		while(remove != -1)
+		{
+			score += ((n - remove) * 100)*difficulty;
+			xd ++;
+			removeRow(remove);
+			remove = checkRow();
+		}
+		if(xd == 5)
+		{
+			xd = 0;
+			difficulty ++;
+			if(difficulty <= 4) delay -= difficulty*10;
+		}
+		End = endScreenCheck();
+		if(End == 0) spawnPiece();
+	}
+	else moveDown();
+}
+
+function removeRow(remove)
+{
+	if(remove == 0)
+		for(var j = 0; j < m; j++)
+		{
+			a[0][j] = 0;
+			cul[0][j] = 0;
+		}
+	else
+	{
+		for(var i = remove; i > 0; i--)
+			for(var j = 0; j < m; j++)
+			{
+				a[i][j] = a[i-1][j];
+				cul[i][j] = cul[i-1][j];
+			}
+	}
+}
+
+function checkRow()
+{
+	var u;
+	for(var i = 0; i < n; i++)
+	{
+		u = 1;
+		for(var j = 0; j < m; j++)
+			if(a[i][j] == 0) 
+				u = 0;
+		if(u == 1) return i;
+	}
+	return -1;
+}
+
+function setColors()
+{
+	for(var i = 0; i < n; i++)
+		for(var j = 0; j < m; j++)
+			if(a[i][j] == 2) cul[i][j] = nr;
+}
+
+function drawCells()
+{
+	var color;
+	for(var i = 0; i<n; i++)
+		for(var j = 0; j<m; j++)
+		{
+			if(cul[i][j] == 1) color = "aqua";
+			else if(cul[i][j] == 2) color = "blue";
+			else if(cul[i][j] == 3) color = "orange";
+			else if(cul[i][j] == 4) color = "yellow";
+			else if(cul[i][j] == 5) color = "lime";
+			else if(cul[i][j] == 6) color = "purple";
+			else if(cul[i][j] == 7) color = "red";
+			if(a[i][j] > 0) cubulet(i,j,color);
+			else cubulet(i,j,background);
+		}
+}
+
+function spawnPiece()
+{
+	var col;
+	nr = random_number(7);
+	if (nr==1)
+	{
+		/*
+		----
+		*/
+		col = random_number(7) - 1;
+		a[0][col]=2;
+		a[0][col+1]=2;
+		a[0][col+2]=2;
+		a[0][col+3]=2;
+	}
+	else if(nr==2)
+	{
+		/*
+		-
+		---
+		*/
+		col = random_number(8) - 1;
+		a[0][col]=2;
+		a[1][col]=2;
+		a[1][col+1]=2;
+		a[1][col+2]=2;
+	}
+	else if(nr==3)
+	{
+		/*
+		  -
+		---
+		*/
+		col = random_number(8) + 1;
+		a[0][col]=2;
+		a[1][col]=2;
+		a[1][col-1]=2;
+		a[1][col-2]=2;
+	}
+	else if(nr==4)
+	{
+		/*
+		--
+		--
+		*/
+		col = random_number(9) - 1;
+		a[0][col]=2;
+		a[0][col+1]=2;
+		a[1][col]=2;
+		a[1][col+1]=2;
+	}
+	else if(nr==5)
+	{
+		/*
+		 --
+		--
+		*/
+		col = random_number(8) + 1;
+		a[0][col]=2;
+		a[0][col-1]=2;
+		a[1][col-1]=2;
+		a[1][col-2]=2;
+	}
+	else if(nr==6)
+	{
+		/*
+		 -
+		---
+		*/
+		col = random_number(8);
+		a[0][col]=2;
+		a[1][col-1]=2;
+		a[1][col]=2;
+		a[1][col+1]=2;
+	}
+	else if(nr==7)
+	{
+		/*
+		--
+		 --
+		*/
+		col = random_number(8) - 1;
+		a[0][col]=2;
+		a[0][col+1]=2;
+		a[1][col+1]=2;
+		a[1][col+2]=2;
+	}
+}
+
+function valid_moveDown()
+{
+	var u=1;
+	for(var i = n-1; i > 0; i--)
+	{
+		if(u==1)
+			for(var j = 0; j < m; j++)
+			{
+				if(a[i][j] == 2)
+				{
+					if(i == n-1) u=0;
+					if(i < n-1 && a[i+1][j] == 1) u=0;
+				}
+				if(u==0) break;
+			}
+	}
+	return u;
+}
+
+function valid_moveLeft()
+{
+	var u;
+	u = 1;
+	for (i = 0; i < n; i++)
+	{
+		if(a[i][0] == 2)
+		{
+			u = 0;
+			break;
+		}
+	}
+	for(var i = 0; i < n; i++)
+		for(var j = 0; j < m; j++)
+			if(a[i][j] == 1 && a[i][j+1] == 2) u=0;
+	return u;
+}
+
+function valid_moveRight()
+{
+	var u;
+	u = 1;
+	for (i = 0; i < n; i++)
+		if(a[i][m-1] == 2)
+		{
+			u = 0;
+			break;
+		}
+	for(var i = 0; i < n; i++)
+		for(var j = 0; j < m; j++)
+			if(a[i][j] == 2 && a[i][j+1] == 1) u = 0;
+	return u;
+}
+
+
+function valid_moveUp()
+{
+	var l = -1, c = -1;
+	for(var i = 0; i < n; i++)
+		for(var j = 0; j < m; j++)
+			if(a[i][j] == 2 && l == -1) l = i;
+	for(var j = 0; j < m; j++)
+		for(var i = 0; i < n; i++)
+			if(a[i][j] == 2 && c == -1) c = j;
+	if(nr == 1)
+	{
+		if(a[l][c+1] == 2)
+		{
+			if(a[l-1][c+1] == 0 && a[l+1][c+1] == 0 && a[l+2][c+1] == 0) return 1;
+			else return 0;
+		}
+		else if(a[l+1][c] == 2)
+		{
+			if(a[l+1][c-1] == 0 && a[l+1][c+1] == 0 && a[l+1][c+2] == 0) return 1;
+			else return 0;
+		}
+	}
+	else if(nr == 2)
+	{
+		if(a[l][c] == 2 && a[l+1][c+1] == 2)
+		{
+			if(a[l][c+1] == 0 && a[l+2][c] == 0) return 1;
+			else return 0;
+		}
+		else if(a[l][c] == 2 && a[l+2][c] == 2)
+		{
+			if(a[l][c+2] == 0 && a[l+1][c+2] == 0) return 1;
+			else return 0;
+		}
+		else if(a[l][c] == 2 && a[l][c+2] == 2)
+		{
+			if(a[l+1][c+1] == 0 && a[l+2][c+1] == 0 && a[l+2][c] == 0) return 1;
+			else return 0;
+		}
+		else
+		{
+			if(a[l][c] == 0 && a[l+1][c] == 0 && a[l+1][c+2] == 0) return 1;
+			else return 0;
+		}
+	}
+	else if(nr == 3)
+	{
+		if(a[l+1][c] == 2 && a[l+1][c+1] == 2)
+		{
+			if(a[l][c] == 0 && a[l+2][c] == 0 && a[l+2][c+1] == 0) return 1;
+			else return 0;
+		}
+		else if(a[l][c] == 2 && a[l+2][c] == 2)
+		{
+			if(a[l][c+1] == 0 && a[l][c+2] == 0) return 1;
+			else return 0;
+		}
+		else if(a[l][c] == 2 && a[l][c+2] == 2)
+		{
+			if(a[l+1][c+1] == 0 && a[l+2][c+1] == 0) return 1;
+			else return 0;
+		}
+		else
+		{
+			if(a[l+1][c] == 0 && a[l][c+2] == 0 && a[l+1][c+2] == 0) return 1;
+			else return 0;
+		}
+	}
+	else if(nr == 5)
+	{
+		if(a[l][c+1] == 2 && a[l][c+2] == 2)
+		{
+			if(a[l][c] == 0 && a[l+2][c+1] == 0) return 1;
+			else return 0;
+		}
+		else
+		{
+			if(a[l][c+1] == 0 && a[l][c+2] == 0) return 1;
+			else return 0;
+		}
+	}
+	else if(nr == 6)
+	{
+		if(a[l+1][c+2] == 2)
+		{
+			if(a[l][c] == 0 && a[l+2][c] == 0) return 1;
+			else return 0;
+		}
+		else if(a[l+2][c] == 2)
+		{
+			if(a[l][c+1] == 0 && a[l][c+2] == 0) return 1;
+			else return 0;
+		}
+		else if(a[l][c+2] == 2)
+		{
+			if(a[l+1][c] == 0 && a[l+2][c+1] == 0) return 1;
+			else return 0;
+		}
+		else
+		{
+			if(a[l+1][c+2] == 0) return 1;
+			else return 0;
+		}
+	}
+	else if(nr == 7)
+	{
+		if(a[l][c] == 2)
+		{
+			if(a[l+1][c] == 0 && a[l+2][c] == 0) return 1;
+			else return 0;
+		}
+		else
+		{
+			if(a[l][c] == 0 && a[l+1][c+2] == 0) return 1;
+			else return 0;
+		}
+	}
+	return 0;
+}
+
+function rotateColors()
+{
+	for(var i = 0; i < n; i++)
+		for(var j = 0; j < m; j++)
+			if(a[i][j] == 2) cul[i][j] = nr;
+				else if(a[i][j] == 0) cul[i][j] = 0;
+}
+
+function moveUp()
+{
+	var l = -1, c = -1;
+	for(var i = 0; i < n; i++)
+		for(var j = 0; j < m; j++)
+			if(a[i][j] == 2 && l == -1) l = i;
+	for(var j = 0; j < m; j++)
+		for(var i = 0; i < n; i++)
+			if(a[i][j] == 2 && c == -1) c = j;
+	if(nr == 1)
+	{
+		if(a[l][c+1] == 2)
+		{
+			a[l-1][c+1] = 2;
+			a[l+1][c+1] = 2;
+			a[l+2][c+1] = 2;
+			a[l][c] = 0;
+			a[l][c+2] = 0;
+			a[l][c+3] = 0;
+		}
+		else if(a[l+1][c] == 2)
+		{
+			a[l+1][c-1] = 2;
+			a[l+1][c+1] = 2;
+			a[l+1][c+2] = 2;
+			a[l][c] = 0;
+			a[l+2][c] = 0;
+			a[l+3][c] = 0;
+		}
+	}
+	else if(nr == 2)
+	{
+		if(a[l][c] == 2 && a[l+1][c+1] == 2)
+		{
+			a[l+1][c+1] = 0;
+			a[l+1][c+2] = 0;
+			a[l][c+1] = 2;
+			a[l+2][c] = 2;
+		}
+		else if(a[l][c] == 2 && a[l+2][c] == 2)
+		{
+			a[l+1][c] = 0;
+			a[l+2][c] = 0;
+			a[l][c+2] = 2;
+			a[l+1][c+2] = 2;
+		}
+		else if(a[l][c] == 2 && a[l][c+2] == 2)
+		{
+			a[l][c] = 0;
+			a[l][c+2] = 0;
+			a[l+1][c+2] = 0;
+			a[l+1][c+1] = 2;
+			a[l+2][c+1] = 2;
+			a[l+2][c] = 2;
+		}
+		else
+		{
+			a[l][c+1] = 0;
+			a[l+2][c] = 0;
+			a[l+2][c+1] = 0;
+			a[l][c] = 2;
+			a[l+1][c] = 2;
+			a[l+1][c+2] = 2;
+		}
+	}
+	else if(nr == 3)
+	{
+		if(a[l+1][c] == 2 && a[l+1][c+1] == 2)
+		{
+			a[l+1][c+1] = 0;
+			a[l+1][c+2] = 0;
+			a[l][c+2] = 0;
+			a[l][c] = 2;
+			a[l+2][c] = 2;
+			a[l+2][c+1] = 2;
+		}
+		else if(a[l][c] == 2 && a[l+2][c] == 2)
+		{
+			a[l+2][c] = 0;
+			a[l+2][c+1] = 0;
+			a[l][c+1] = 2;
+			a[l][c+2] = 2;
+		}
+		else if(a[l][c] == 2 && a[l][c+2] == 2)
+		{
+			a[l][c+2] = 0;
+			a[l+1][c] = 0;
+			a[l+1][c+1] = 2;
+			a[l+2][c+1] = 2;
+		}
+		else
+		{
+			a[l][c] = 0;
+			a[l][c+1] = 0;
+			a[l+2][c+1] = 0;
+			a[l+1][c] = 2;
+			a[l][c+2] = 2;
+			a[l+1][c+2] = 2;
+		}
+	}
+	else if(nr == 5)
+	{
+		if(a[l][c+1] == 2 && a[l][c+2] == 2)
+		{
+			a[l][c+1] = 0;
+			a[l][c+2] = 0;
+			a[l][c] = 2;
+			a[l+2][c+1] = 2;
+		}
+		else
+		{
+			a[l][c] = 0;
+			a[l+2][c+1] = 0;
+			a[l][c+1] = 2;
+			a[l][c+2] = 2;
+		}
+	}
+	else if(nr == 6)
+	{
+		if(a[l+1][c+2] == 2)
+		{
+			a[l][c+1] = 0;
+			a[l+1][c+2] = 0;
+			a[l][c] = 2;
+			a[l+2][c] = 2;
+		}
+		else if(a[l+2][c] == 2)
+		{
+			a[l+1][c] = 0;
+			a[l+2][c] = 0;
+			a[l][c+1] = 2;
+			a[l][c+2] = 2;
+		}
+		else if(a[l][c+2] == 2)
+		{
+			a[l][c] = 0;
+			a[l][c+2] = 0;
+			a[l+1][c] = 2;
+			a[l+2][c+1] = 2;
+		}
+		else
+		{
+			a[l+2][c+1] = 0;
+			a[l+1][c+2] = 2;
+		}
+	}
+	else if(nr == 7)
+	{
+		if(a[l][c] == 2)
+		{
+			a[l][c] = 0;
+			a[l+1][c+2] = 0;
+			a[l+1][c] = 2;
+			a[l+2][c] = 2;
+		}
+		else
+		{
+			a[l+1][c] = 0;
+			a[l+2][c] = 0;
+			a[l][c] = 2;
+			a[l+1][c+2] = 2;
+		}
+	}
+	rotateColors();
+}
+
+function moveDown()
+{
+	for(var i = n-1; i > 0; i--)
+	{
+		for(var j = 0; j < m; j++)
+		{
+			if (a[i-1][j] == 2 && a[i][j] == 0)
+			{
+				a[i-1][j] = 0;
+				a[i][j] = 2;
+				cul[i-1][j] = 0;
+				cul[i][j] = nr;
+			}
+		}
+	}
+}
+
+function moveLeft()
+{
+	for(var i = 0; i < n; i++)
+		for(var j = 0; j < m-1; j++)
+		{
+			if (a[i][j] == 0 && a[i][j+1] == 2)
+			{
+				a[i][j] = 2;
+				a[i][j+1] = 0;
+				cul[i][j] = nr;
+				cul[i][j+1] = 0;
+			}
+		}
+}
+
+function moveRight()
+{
+	for(var i = 0; i < n; i++)
+	for(var j = m-1; j > 0; j--)
+	{
+		if (a[i][j-1] == 2 && a[i][j] == 0)
+		{
+			a[i][j] = 2;
+			a[i][j-1] = 0;
+			cul[i][j] = nr;
+			cul[i][j-1] = 0;
+		}
+	}
+}
+
+function keyPush(evt) 
+{
+	var u;
+	if(evt.keyCode==37 && End == 0)
+	{
+		u = valid_moveLeft();
+		if(u == 1) 
+		{
+			moveLeft();
+			drawCells();
+			showScore();
+		}
+		//alert("left");
+	}
+	else if(evt.keyCode==38  && End == 0)
+	{
+		snooze2++;
+		u = valid_moveUp();
+		if(snooze1 > snooze2 + 30)
+		{
+			snooze2 = snooze1;
+			if(u == 1) 
+			{
+				
+				moveUp();
+				drawCells();
+				showScore();
+			}
+		}
+		//alert("up");
+	}
+	else if(evt.keyCode==39 && End == 0)
+	{
+		u = valid_moveRight();
+		if(u == 1) 
+		{
+			moveRight();
+			drawCells();
+			showScore();
+		}
+		//alert("right");
+	}
+	else if(evt.keyCode==40 && End == 0)
+	{
+		u = valid_moveDown();
+		if(u == 1)
+		{
+			moveDown();
+			drawCells();
+			showScore();
+		}
+		//alert("down");
+	}
+	else if(evt.keyCode==13)
+	{
+		freeze = 0;
+		if(End == 1)
+		{
+			for(var i = 0; i< n; i++)
+			{
+				a[i] = [];
+				cul[i] = [];
+				for(var j = 0; j< m; j++)
+				{
+					a[i][j] = 0;
+					cul[i][j] = 0;
+				}
+			}
+			spawnPiece();
+			difficulty = 1;
+			score = 0;
+			xd = 0;
+			End = 0;
+		}
+	}
+	else if(evt.keyCode==27)
+	{
+		freeze = 1;
+	}
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+function cubulet(x, y, drawColor)
+{
+	colorRect(1+(y)*(size+1),1+(x)*(size+1),size,size,drawColor);
+}
+
+function drawGrid()
+{
+	for (var i = 0; i <= canvas.width; i+=size+1)
+		colorRect(i, 0, 1, canvas.height, "#4a5972");
+	
+	for (var i = 0; i <= canvas.height; i+=size+1)
+		colorRect(0, i, canvas.width, 1, "#4a5972");	
+}
+
+function colorCircle(X,Y,r,drawColor) {
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) {
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, drawColor)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.lineWidth = 1;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+</script>
+
+</html>

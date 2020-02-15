@@ -1,0 +1,176 @@
+<html>
+
+<head>
+
+	<title>Flappy bird</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:5;  overflow:hidden;}</style>
+<p align = 'center'>
+<canvas id ="gameCanvas"></canvas>
+</p>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+canvas.width = 400;
+canvas.height = 600;
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+var m_x, m_y;
+const fps = 300;
+const barThick = 10;
+const speed = 0.4;
+
+const gravity = 0.045;
+var vy = 0;
+const lift = -8;
+
+const R = 10;
+
+var bar1_x = canvas.width, bar2_x = canvas.width * 1.5;
+var h1 = 50 + random_number(canvas.height-200), gap1 = 75 + random_number(canvas.height - h1 - 100);
+var h2 = 50 + random_number(canvas.height-200), gap2 = 75 + random_number(canvas.height - h2 - 100);
+var y = canvas.height / 2, x = 3 * barThick;
+
+
+window.onload = function() 
+{
+	setInterval(flappy, 1000/fps);	
+}
+
+function flappy()
+{
+	drawEverything();
+	moveEverything();
+}
+
+function moveEverything() 
+{
+	vy += gravity;
+	vy *= 0.93; // frecare cu aerul ???
+	console.log(y);
+
+	bar1_x -= speed;
+	bar2_x -= speed;
+	if(bar1_x + barThick < 0) 
+	{
+		bar1_x = canvas.width;
+		h1 = 50 + random_number(canvas.height-200);
+		gap1 = 75 + random_number(canvas.height - h1 - 100);
+	}
+	if(bar2_x + barThick < 0)
+	{
+		bar2_x = canvas.width;
+		h2 = 50 + random_number(canvas.height-200);
+		gap2 = 75 + random_number(canvas.height - h2 - 100);
+	}
+	
+	y += vy;
+	
+	if(y + R >= canvas.height) y = canvas.height - R;
+	if(y - R <= 0) y = R;
+}
+
+function drawEverything() 
+{
+	var cul;
+	colorRect(0,0,canvas.width,canvas.height,'black');
+	
+	if((bar1_x <= x && x <= bar1_x + barThick && y >=0 && y <= h1) || (bar1_x <= x && x <= bar1_x + barThick && y >= h1 + gap1 && y <= canvas.height)) cul = "red";
+		else cul = "white";	
+	colorRect(bar1_x,0,barThick,h1,cul);
+	colorRect(bar1_x,h1 + gap1,barThick,canvas.height,cul);
+	
+	if((bar2_x <= x && x <= bar2_x + barThick && y >=0 && y <= h2) || (bar2_x <= x && x <= bar2_x + barThick && y >= h2 + gap2 && y <= canvas.height)) cul = "red";
+		else cul = "white";
+	colorRect(bar2_x,0,barThick,h2,cul);
+	colorRect(bar2_x,h2 + gap2,barThick,canvas.height,cul);
+	
+	colorCircle(x,y,R,"white");
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==32)
+	{
+		vy += lift;
+	}
+}
+
+function showMessage(x_coord,y_coord,msg)
+{
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = '50px Segoe UI';
+	canvasContext.textAlign = 'center';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, drawColor)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+
+</script>
+</body>
+</html>

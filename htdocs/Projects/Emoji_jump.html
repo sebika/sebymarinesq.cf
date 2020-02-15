@@ -1,0 +1,423 @@
+<html>
+
+<head>
+
+	<title>Emoji jump</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:5;  overflow:hidden;}</style>
+<p align = 'center'>
+<canvas id ="gameCanvas"></canvas>
+</p>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+var m_x, m_y;
+const fps = 120;
+const size = 75; // do not change
+const gravity = 0.05;
+const fr = 0.92;
+const P = 13;
+const A1 = 60;
+const A2 = 90 + (90 - A1);
+
+var emoji = [];
+loadPictures();
+var playerEmoji;
+
+var h = [], n, y, jump, level, vy;
+var u, dist = [], k;
+
+var vx, time, e; // sec
+var randomEmoji, x, endScreen;
+
+var tx = [], ty = [], l, E = [], ok, mx = -1, pas, slide, c = [], spd;
+
+var player1, score = 0;
+
+player1 = prompt("Please enter your name", "Player 1");
+
+while(player1 == null || player1 == "") 
+{
+	alert("User cancelled the prompt.");
+	player1 = prompt("Please enter your name", "Player 1");
+}
+
+
+function init()
+{
+	var myWidth = 475;
+	var myHeight = 650;
+	canvas.width = myWidth;
+	canvas.height = myHeight;
+	for(var i = 0; i <= canvas.height / size + 2; i++)
+		h[i] = (i-1) * size;
+	n = Math.floor(canvas.height / size + 1);
+	y = h[n-1] + size/2;
+	level = h[n-1] + size/2;
+	jump = 0;
+	u = 0;
+	vy = 0;
+	k = 0;
+	dist[0] = 0;
+	l = 0;
+	mx = -1;
+	slide = 0;
+	score = 0;
+	
+	playerEmoji = emoji[random_number(3)];
+	generateEmoji();
+	
+	endScreen = 0;
+	
+	for(var i = 0; i <= n; i++)
+	{
+		var cul;
+		if(i%2 == 0) cul = "#ADD8E6";
+		else cul = "#5CACEE";
+		c[i] = cul;
+	}
+	
+}
+
+window.onload = function() 
+{
+	init();
+	window.addEventListener("resize", init, false);	
+	setInterval(animation, 1000/fps);	
+}
+
+function animation()
+{
+	drawEverything();
+	moveEverything();
+}
+
+function moveEverything() 
+{
+	if(vy > 0 && jump == 1) u = 1;
+	if(u == 0)
+	{
+		if(jump == 1)
+		{
+			vy += gravity;
+			vy *= fr;
+			k ++;
+			dist[k] = vy;
+		}
+	}
+	else
+	{
+		vy = -dist[k];
+		k--;
+	}
+	y += vy;
+	
+	checkCollision();
+	
+	
+	if(ok == 1) 
+	{
+		slide = 1;
+		pas = 0;
+		spd = 0;
+		if(level > 0.43 * canvas.height) slide = 0;
+	}
+	if(slide == 1)
+	{
+		spd += 1;
+		spd *= 1.01;
+		for(var i = 0; i <= n; i++)
+			h[i] += spd;
+		pas += spd;
+		
+		y += spd;
+		level += spd;
+		for(var i = 1; i <= l; i++)
+			ty[i] += spd;
+		
+		if(pas >= size) slide = 0;
+	}
+	if(h[0] >= 0)
+	{
+		for(var i = 0; i <= n; i++)
+			h[i] -= pas;
+		c[0] = c[1];
+		c[1] = c[2];
+		for(var i = 2; i <= n; i++)
+			c[i] = c[i-2];
+	}
+	
+	
+	if(ok != 1 && x >= 0 && x <= canvas.width) vx *= 1.005;
+	
+	if(endScreen == 0)
+	{
+		if(ok == -1) e ++;
+		if(e / fps >= time)
+		{
+			if((x >= canvas.width/2 && vx > 0) || (x <= canvas.width/2 && vx < 0))
+			{
+				if(jump == 0) generateEmoji();
+				else x = canvas.width/2;
+			}
+			else x += vx;
+		}	
+	}
+}
+
+function drawEverything() 
+{
+	if(endScreen == 1)
+	{
+		//colorRect(0,0,canvas.width,canvas.height,"black");
+		showMessage(canvas.width/2,canvas.height/2,"PRESS ENTER TO RESTART", 30, "black","center");
+		showMessage(canvas.width/2,h[3] + size/2,"SCORE: " + score, 50, "black","center");
+		
+	}
+	else
+	{
+		drawBg();
+		drawImg(playerEmoji,canvas.width/2,y);
+		drawImg(randomEmoji,x,level);
+		for(var i = 1; i <= l; i++)
+			drawImg(E[i],tx[i],ty[i]);
+		//line(0,canvas.height*0.5,canvas.width,canvas.height*0.5,"red");
+		
+		showMessage(canvas.width - 45,size/2,player1, 40, "black","right");
+		showMessage(45,size/2,score, 50, "black", "left");
+	}
+}
+
+function checkCollision()
+{
+	ok = -1;
+	for(var i = A1; i <= A2; i ++)
+	{
+		var x1 = map(size / 2 * Math.cos(i*Math.PI/180), -size/2, size/2, canvas.width/2-size/2, canvas.width/2+size/2);
+		var y1 = map(size / 2 * Math.sin(i*Math.PI/180), -size/2, size/2, y-size/2, y+size/2);
+		//line(canvas.width/2,y,x1,y1,"white");
+		var d = Math.sqrt((x1-x)*(x1-x) + (y1-level)*(y1-level));
+		if(d <= size/2)	ok = 1;
+		if(ok > -1) break;
+	}
+	
+	for(var i = 0; i <= A1; i ++)
+	{
+		if(ok == 1) break;
+		var x1 = map(size / 2 * Math.cos(i*Math.PI/180), -size/2, size/2, canvas.width/2-size/2, canvas.width/2+size/2);
+		var y1 = map(size / 2 * Math.sin(i*Math.PI/180), -size/2, size/2, y-size/2, y+size/2);
+		var d = Math.sqrt((x1-x)*(x1-x) + (y1-level)*(y1-level));
+		if(d <= size/2)	ok = 0;
+		
+	}
+	for(var i = 300; i <= 360; i ++)
+	{
+		if(ok == 1) break;
+		var x1 = map(size / 2 * Math.cos(i*Math.PI/180), -size/2, size/2, canvas.width/2-size/2, canvas.width/2+size/2);
+		var y1 = map(size / 2 * Math.sin(i*Math.PI/180), -size/2, size/2, y-size/2, y+size/2);
+		var d = Math.sqrt((x1-x)*(x1-x) + (y1-level)*(y1-level));
+		if(d <= size/2)	ok = 0;
+		
+	}
+	for(var i = A2; i <= 240; i ++)
+	{	
+		if(ok == 1) break;
+		var x1 = map(size / 2 * Math.cos(i*Math.PI/180), -size/2, size/2, canvas.width/2-size/2, canvas.width/2+size/2);
+		var y1 = map(size / 2 * Math.sin(i*Math.PI/180), -size/2, size/2, y-size/2, y+size/2);
+		var d = Math.sqrt((x1-x)*(x1-x) + (y1-level)*(y1-level));
+		if(d <= size/2) ok = 0;
+		
+	}
+	if(ok == 0) endScreen = 1;
+	else if(ok == 1 || y >= level)
+	{	
+		if(ok == 1)
+		{
+			l ++;
+			tx[l] = x;
+			if(tx[l] == canvas.width/2) score += 2;
+			else score ++;
+			ty[l] = level;
+			E[l] = randomEmoji;
+			generateEmoji();
+		}
+		if(u == 1)	playerEmoji = emoji[random_number(3)];
+		level = y;
+		jump = 0;
+		u = 0;
+		vy = 0;
+	}
+		
+}
+
+function generateEmoji()
+{
+	randomEmoji = emoji[5 + random_number(9)];
+	x = -size;
+	vx = 1 + random_number(3000)/1000;
+	if(random_number(2) == 2) 
+	{
+		vx = -vx;
+		x = canvas.width + size;
+	}
+	time = random_number(1300)/1000;
+	e = 0;
+}
+
+function drawBg()
+{
+	for(var i = 0; i <= n; i++)
+		colorRect(0,h[i],canvas.width,size,c[i]);
+}
+
+function showMessage(x_coord,y_coord,msg,size,color,align)
+{	
+	canvasContext.moveTo(x_coord,0);
+	canvasContext.lineTo(x_coord,canvas.height);
+	//canvasContext.stroke();
+	canvasContext.textAlign = align;
+	
+	canvasContext.moveTo(0,y_coord);
+	canvasContext.lineTo(canvas.width,y_coord);
+	//canvasContext.stroke();
+	canvasContext.textBaseline = 'middle'; 
+	
+	canvasContext.fillStyle = color;
+	canvasContext.font = size + 'px Segoe UI';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, drawColor)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==32 && jump == 0)
+	{
+		jump = 1;
+		vy -= P;
+		playerEmoji = emoji[random_number(3) + 3];
+	}
+	if(evt.keyCode==13 && endScreen == 1)
+		init();
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+function pow(a, b)
+{
+	var nr = 1;
+	for(var i = 1; i <= b; i++)
+		nr = nr * a;
+	return nr;
+}
+
+function loadPictures()
+{
+	emoji[1] = new Image();
+	emoji[1].src = "Images/Emoji/Slightly_Smiling.png";
+	emoji[2] = new Image();
+	emoji[2].src = "Images/Emoji/Smiling1.png";
+	emoji[3] = new Image();
+	emoji[3].src = "Images/Emoji/Smiling2.png";
+	emoji[4] = new Image();
+	emoji[4].src = "Images/Emoji/Surprised.png";
+	emoji[5] = new Image();
+	emoji[5].src = "Images/Emoji/Dizzy.png";
+	emoji[6] = new Image();
+	emoji[6].src = "Images/Emoji/Grinmacing.png";
+	emoji[7] = new Image();
+	emoji[7].src = "Images/Emoji/OMG.png";
+	emoji[8] = new Image();
+	emoji[8].src = "Images/Emoji/Crying.png";
+	emoji[9] = new Image();
+	emoji[9].src = "Images/Emoji/Devil.png";
+	emoji[10] = new Image();
+	emoji[10].src = "Images/Emoji/HeartEyes.png";
+	emoji[11] = new Image();
+	emoji[11].src = "Images/Emoji/Neutral.png";
+	emoji[12] = new Image();
+	emoji[12].src = "Images/Emoji/TearsOfJoy.png";
+	emoji[13] = new Image();
+	emoji[13].src = "Images/Emoji/Thinking.png";
+	emoji[14] = new Image();
+	emoji[14].src = "Images/Emoji/TongueOut.png";
+}
+
+function drawImg(picture, x, y)
+{
+	canvasContext.drawImage(picture,x - size/2,y - size/2,size,size);
+}
+function map(nr, l1, r1, l2, r2)
+{
+	var p;
+	p = (nr - l1) * 100 / (r1 - l1);
+	return l2 + p / 100 * (r2 - l2);
+}
+
+</script>
+</body>
+</html>

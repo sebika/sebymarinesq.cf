@@ -1,0 +1,315 @@
+<html>
+
+<head>
+
+	<title>Fractal tree</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:0;  overflow:hidden;}</style>
+<p align = 'center'>
+<canvas id ="gameCanvas"></canvas>
+</p>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+var m_x, m_y;
+const fps = 60;
+const maxLevel = 11;
+const ratio = 0.78;
+const T = 12;
+const L = 140;
+const rat = 0.78;
+
+const x_left = 50, x_right = 300;
+var angle = 120;
+var l = L, level = 0, ang;
+var x = map(20 + random_number(100),0,360,x_left,x_right);
+var ok = 0;
+var wait = 0, nr = -1;
+
+var x1 = [], y1 = [], x2 = [], y2 = [], n = 0, t = [], lvl = [], cul = [];
+
+window.onload = function() 
+{
+	init();
+	window.addEventListener("resize", init, false);
+	setInterval(animation, 1000/fps);	
+}
+
+function init()
+{
+	var myWidth = window.innerWidth;
+	var myHeight = window.innerHeight;
+	canvas.width = myWidth;
+	canvas.height = myHeight;
+	fractal(x1[1],y1[1],x2[1],y2[1],angle);
+	
+	cul[0] = "#ededff";
+	cul[1] = "#d9d9ff";
+	cul[2] = "#c6c6ff";
+	cul[3] = "#b2b2ff";
+	cul[4] = "#9f9fff";
+	cul[5] = "#8b8bff";
+	cul[6] = "#7777ff";
+	cul[7] = "#6464ff";
+	cul[8] = "#5050ff";
+	cul[9] = "#3d3dff";
+	cul[10] = "#2929ff";
+	cul[11] = "#1515ff";
+	cul[12] = "#0202ff";
+	cul[13] = "#0000ed";
+	cul[14] = "#0000d9";
+	cul[15] = "#0000c6";
+	cul[16] = "#0000b2";
+}
+
+function animation()
+{
+	drawEverything();
+	moveEverything();
+}
+
+function moveEverything() 
+{
+	//angle += 1;
+}
+
+function drawEverything() 
+{
+	colorRect(0,0,canvas.width,canvas.height,'white');
+	
+	if(ok == 1)
+	{
+		x = m_x;
+		if(m_x > x_right) x = x_right - 2.5;
+		if(m_x < x_left) x = x_left;
+	}
+	line(x_left,50,x_right,50,"black",2,5);
+	colorRect(x,50 - 15, 5, 30, "black");
+	
+	angle = map(x,x_left,x_right,0,360);
+	fractal(x1[1],y1[1],x2[1],y2[1],angle);
+
+	wait++;
+	if(wait >= fps / 3)
+	{
+		wait = 0;
+		nr++;
+	}
+	//if(nr > maxLevel) nr = -1;
+	
+	for(var i = 1; i <= n; i++)
+	{
+		var thick = T;
+		for(var j = 1; j <= lvl[i]; j++)
+			thick *= rat;
+		if(lvl[i] <= nr) line(x1[i],y1[i],x2[i],y2[i],cul[5+lvl[i]],thick,lvl[i]);
+	}
+	
+}
+
+function line(x1, y1, x2, y2, drawColor, thick, level)
+{
+	var op;
+	if(level == maxLevel) op = 0.5;
+	else if(level == maxLevel-1) op = 0.6;
+	else if(level == maxLevel-2) op = 0.7;
+	else if(level == maxLevel-3) op = 0.8;
+	else if(level == maxLevel-4) op = 0.9;
+	else op = 1;
+	canvasContext.strokeStyle = 'rgba(0,0,' + level*20 + ',' + op + ')';
+	canvasContext.lineWidth = thick;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+function fractal(X1, Y1, X2, Y2, A)
+{
+	if(level == 0)
+	{
+		n = 1;
+		lvl[1] = 0;
+		l = L; 
+		level = 0; 
+		x1[1] = canvas.width / 2;
+		y1[1] = canvas.height - 50;
+		x2[1] = x1[1];
+		y2[1] = y1[1] - l;
+		t[1] = T;
+		X1 = x1[1]; X2 = x2[1]; Y1 = y1[1]; Y2 = y2[1];
+	}
+	if(level < maxLevel)
+	{
+		var new_x1, new_y1, new_x2, new_y2;
+		
+		level ++;
+		l *= ratio;
+		
+		var ip = Math.sqrt((X1-X2)*(X1-X2) + (Y1-Y2)*(Y1-Y2));
+		var c = X2 - X1;
+		var alpha;
+		alpha = Math.asin(c/ip);
+		var deg = (alpha * 180) / Math.PI;
+		if(Y2 > Y1) deg =  180 - deg;
+		ang =(360 + A) / 2 - deg;
+
+		new_x1 = X2 + l * Math.sin(ang * Math.PI / 180);
+		new_y1 = Y2 + l * Math.cos(ang * Math.PI / 180);
+		new_x2 = X2 + l * Math.sin((ang - A) * Math.PI / 180);
+		new_y2 = Y2 + l * Math.cos((ang - A) * Math.PI / 180);
+
+		n++;
+		x1[n] = X2;
+		y1[n] = Y2;
+		x2[n] = new_x1;
+		y2[n] = new_y1;
+		t[n] = t[1] - level;
+		lvl[n] = level;
+		
+		fractal(x1[n],y1[n],x2[n],y2[n],A);
+		
+		n++;
+		x1[n] = X2;
+		y1[n] = Y2;
+		x2[n] = new_x2;
+		y2[n] = new_y2;
+		t[n] = t[1] - level;
+		lvl[n] = level;
+		
+		fractal(x1[n],y1[n],x2[n],y2[n],A);
+		
+		level --;
+		l /= ratio;
+	}
+}
+
+function map(nr, l1, r1, l2, r2)
+{
+	var p;
+	p = (nr - l1) * 100 / (r1 - l1);
+	return l2 + p / 100 * (r2 - l2);
+}
+
+function showMessage(x_coord,y_coord,msg)
+{
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = '50px Segoe UI';
+	canvasContext.textAlign = 'center';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function showMessage1(x_coord,y_coord,msg)
+{	
+	canvasContext.moveTo(x_coord,0);
+	canvasContext.lineTo(x_coord,canvas.height);
+	//canvasContext.stroke();
+	canvasContext.textAlign = 'start';
+	
+	canvasContext.moveTo(0,y_coord);
+	canvasContext.lineTo(canvas.width,y_coord);
+	//canvasContext.stroke();
+	canvasContext.textBaseline = 'hanging'; 
+	
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = '50px Segoe UI';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==37)
+	{
+		alert("left");
+	}
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+canvas.addEventListener("mouseup",mouse_up);
+
+canvas.addEventListener("mousedown",mouse_down);
+
+function mouse_down(evt) 
+{
+	if(m_x >= x_left && m_x <= x_right - 2.5 && m_y >= 50 - 15 && m_y <= 50 + 15) 
+	{
+		x = m_x;
+		ok = 1;
+	}
+}
+
+function mouse_up(evt) 
+{
+	ok = 0;
+}
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+function pow(a, b)
+{
+	var nr = 1;
+	for(var i = 1; i <= b; i++)
+		nr = nr * a;
+	return nr;
+}
+
+
+</script>
+</body>
+</html>

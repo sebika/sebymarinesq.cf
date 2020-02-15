@@ -1,0 +1,235 @@
+<html>
+
+<head>
+
+	<title>Purple rain</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:5;}</style>
+
+<p align = "center">
+<canvas id ="gameCanvas"></canvas>
+</p>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+var m_x, m_y;
+
+const back =   ["#000033", "#e6e6ff", "#f0f0f5", "#f5e6ff", "#ffe6e6",
+				"#ffffe6", "#eeffe6", "#e6ffff"];
+const fps = 120;
+const rainDrops = 300;
+const gravity = 1.003;
+const delayBetweenStrikes = 30; //in seconds
+
+var xd = 0, idk = 0, gradient = 0, spd = 0, u = 0;
+
+var rainDrop_x = [];
+var rainDrop_y = [];
+var thick = [];
+var speed = [];
+var lenght = [];
+
+//lightning strike
+var xlight = [];
+var ylight = [];
+var l = -1;
+var delay = 0;
+
+var kk = 0;
+
+var THUNDER = new Audio("Sounds/Thunder.mp3");
+var RAIN = new Audio("Sounds/Rain.mp3");
+
+window.onload = function() 
+{
+	init();
+	setInterval(PurpleRain, 1000/fps);	
+}
+
+function init()
+{
+	var myWidth = window.innerWidth;
+	var myHeight = window.innerHeight;
+	canvas.width = 800;
+	canvas.height = 600;
+	for(var i = 0; i < rainDrops; i++)
+		spawnRainDrop(i);
+	RAIN.loop = true;
+	RAIN.play();
+}
+
+function PurpleRain()
+{
+	drawEverything();
+	moveEverything();
+}
+
+function moveEverything() 
+{
+	for(var i = 0; i < rainDrops; i++)
+	{
+		speed[i] *= gravity;
+		rainDrop_y[i] += speed[i];
+		if(rainDrop_y[i] > canvas.height) spawnRainDrop(i);
+	}
+}
+
+function drawEverything() 
+{
+	//#e0e0eb
+	var nr;
+	colorRect(0,0,canvas.width,canvas.height,back[gradient]);
+	
+	delay++;
+	if(delay % (fps * random_number(delayBetweenStrikes)) == 0)
+	{
+		delay = 0;
+		xd = 0;
+		l = -1;
+		spawnLightningStrike();
+		THUNDER.pause();
+		THUNDER.currentTime = 0;
+		THUNDER.play();
+		spd = 0;
+		u = 1;
+	}
+	else xd++;
+	idk++;
+	if(idk % 2 == 0) nr = 2 * (fps / random_number(2));
+	if(xd > 2*fps) u = 0;
+	if(xd < nr && xd < fps)
+	{
+		idk = 0;
+		drawLightningStrike();
+		if(u==1)
+		{
+			spd++;
+			if(spd % 8 == 0) gradient = random_number(7);
+		}
+	}
+	else gradient = 0;
+	for(var i = 0; i < rainDrops; i++)
+		line(rainDrop_x[i],rainDrop_y[i],rainDrop_x[i],rainDrop_y[i] + lenght[i], thick[i], '#9900ff');
+	drawBorder();
+}
+
+function drawLightningStrike()
+{
+	for(var i = 0; i < l-1; i++)
+		line(xlight[i],ylight[i],xlight[i+1],ylight[i+1],(l-i) / 2,'white');
+}
+
+function spawnLightningStrike()
+{
+	
+	l++;
+	xlight[l] = canvas.width / 2 + 300 - random_number(600);
+	ylight[l] = 50 - random_number(100);
+	while(ylight[l] < canvas.height)
+	{
+		l++;
+		xlight[l] = xlight[l-1] + 50 - random_number(100);
+		while(xlight[l] < 30 || xlight[l] > canvas.width - 30)
+			xlight[l] = xlight[l-1] + 50 - random_number(100);
+		ylight[l] = ylight[l-1] + 10 + random_number(90);
+	}
+}
+
+function spawnRainDrop(p)
+{
+	rainDrop_x[p] = random_number(canvas.width);
+	rainDrop_y[p] = 0 - random_number(100);
+	thick[p] = (1000 + random_number(3000))/1000;
+	speed[p] = thick[p] / ((1000 + random_number(1000))/1000);
+	lenght[p] = thick[p] * (3 + random_number(7));
+}
+
+function drawBorder()
+{
+	colorRect(0,0,1,canvas.height,'black');
+	colorRect(canvas.width-1,0,canvas.width-1,canvas.height,'black');
+	colorRect(0,0,canvas.width-1,1,'black');
+	colorRect(0,canvas.height-1,canvas.width-1,canvas.height-1,'black');
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, thickness, drawColor)
+{
+	canvasContext.lineWidth = thickness;
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==37)
+	{
+		alert("left");
+	}
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<html>
+
+<head>
+
+	<title>Linear regression</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:5;  overflow:hidden;}</style>
+<p align = 'center'>
+<canvas id ="gameCanvas" width = "860" height = "640"></canvas>
+</p>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+var m_x, m_y;
+const fps = 1000;
+const size = 10;
+const acc = 1.005;
+const range = 5;
+const Wait = 300;
+
+var x = [], y = [], n = 0;
+var x1 = 0, x2 = canvas.width, y1 = 0, y2 = 0, best_y1, best_y2;
+
+var min = 9999999999, idk = 0;
+
+window.onload = function() 
+{
+	setInterval(game, 1000/fps);	
+}
+
+function game()
+{
+	moveEverything();
+	drawEverything();
+}
+
+function moveEverything()
+{
+	var new_y1, new_y2;
+	if(idk > Wait) 
+	{
+		new_y1 = y1 - range + random_number((2*range + 1) * 100) / 100;
+		while(new_y1 < 0 || new_y1 > canvas.height) new_y1 = y1 - range + random_number((2*range + 1) * 100) / 100;
+		new_y2 = y2 - range + random_number((2*range + 1) * 100) / 100;
+		while(new_y2 < 0 || new_y2 > canvas.height) new_y2 = y2 - range + random_number((2*range + 1) * 100) / 100;
+	}
+	else
+	{
+		new_y1 = random_number((canvas.height+1) * 100) / 100;
+		new_y2 = random_number((canvas.height+1) * 100) / 100;
+	}
+	s = 0;
+	for(var i = 1; i <= n; i++)
+	{	
+		var Y, dif;
+		Y = (x2 * new_y1 + x[i] * new_y2 - x[i] * new_y1) / x2;
+		dif = y[i] - Y;
+		if(dif < 0) dif = -dif;
+		s += dif;
+	}
+	idk ++;
+	if(s < min && n > 0)
+	{
+		idk = 0;
+		min = s;
+		console.log(min);
+		best_y1 = new_y1;
+		best_y2 = new_y2;
+		idk = 0;
+	}
+	if(y1 > best_y1 && y1 / acc > best_y1) y1 /= acc;
+	else if(y1 < best_y1 && y1 * acc < best_y1) y1 *= acc;
+	else y1 = best_y1;
+	
+	if(y2 > best_y2 && y2 / acc > best_y2) y2 /= acc;
+	else if(y2 < best_y2 && y2 * acc < best_y2) y2 *= acc;
+	else y2 = best_y2;
+	
+}
+
+function drawEverything() 
+{
+	colorRect(0, 0, canvas.width, canvas.height,'black');
+	for(var i = 1; i <= n; i++)
+	{
+		var Y = (x2 * y1 + x[i] * y2 - x[i] * y1) / x2;
+		line(x[i],y[i],x[i],Y,"red",1);
+	}
+	
+	if(n >= 1) line(x1,y1,x2,y2,"blue",3);
+	
+	for(var i = 1; i <= n; i++)
+		colorCircle(x[i], y[i], size, "white");
+}
+
+function showMessage(x_coord,y_coord,msg)
+{	
+	canvasContext.moveTo(x_coord,0);
+	canvasContext.lineTo(x_coord,canvas.height);
+	//canvasContext.stroke();
+	canvasContext.textAlign = 'start';
+	
+	canvasContext.moveTo(0,y_coord);
+	canvasContext.lineTo(canvas.width,y_coord);
+	//canvasContext.stroke();
+	canvasContext.textBaseline = 'hanging'; 
+	
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = '50px Segoe UI';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, drawColor, thick)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.lineWidth = thick;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==37)
+	{
+		alert("left");
+	}
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+canvas.addEventListener("mousedown",mouseClick);
+
+function mouseClick(evt) 
+{
+	n ++;
+	x[n] = m_x;
+	y[n] = m_y;
+	min = 9999999999;
+	idk = 0;
+}
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber));
+}
+
+
+</script>
+</body>
+</html>

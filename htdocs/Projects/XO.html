@@ -1,0 +1,1121 @@
+<html>
+
+<head>
+
+	<title>X si O</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:5;  overflow:hidden;}</style>
+<p align = 'center'>
+<canvas id ="gameCanvas"></canvas>
+</p>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+var m_x, m_y;
+const fps = 1000;
+const size = 50;
+const thick = 1;
+
+var x = [], y = [];
+var mat = [], n = 0, m = 0; // -1 = empty, 0 = O, 1 = X
+var turn = 1, ok = 0, px, py, I = 0, J = 0, M, u, kk = 0, idk = 0;
+var T = turn;
+var x1, y1, x2, y2;
+var ok = 0, enter = 0;
+var player1, player2, q = 0, W = 0;
+var v = [];
+
+window.onload = function() 
+{	
+	init();
+	window.addEventListener("resize", init, false);
+	setInterval(animation, 1000/fps);
+}
+
+function EnterName()
+{
+	player1 = prompt("Please enter your name Player 1:", "Player 1");
+
+	while(player1 == null || player1 == "") 
+	{
+		alert("User cancelled the prompt.");
+		player1 = prompt("Please enter your name Player 1:", "Player 1");
+	}
+	
+	player2 = "Computer";
+}
+
+function init()
+{
+	var myWidth = 860;
+	var myHeight = 640;
+	canvas.width = myWidth;
+	canvas.height = myHeight;
+	
+	n = 0;
+	m = 0;
+	
+	colorRect(0,0,canvas.width,canvas.height,"black");
+	for(var j = 0; j < canvas.height; j += size)
+	{
+		if(i > 0) n ++;
+		x[n] = [];
+		y[n] = [];
+		mat[n] = [];
+		for(var i = 0; i < canvas.width; i += size)
+		{
+			if(i > 0 && j > 0 && i + size < canvas.width && j + size < canvas.height) 
+			{
+				colorRect(i,j,size,size,"white");
+				m++;
+				x[n][m] = i;
+				y[n][m] = j;
+				mat[n][m] = -1;
+			}
+			i += thick;
+		}
+		if(m > 0) M = m;
+		m = 0;
+		j += thick;
+	}
+	m = M;
+	n--;
+	colorRect(0,0,canvas.width,size,"white");
+	colorRect(0,j - size - thick,canvas.width,size*2,"white");
+	colorRect(0,0,size,canvas.height,"white");
+	colorRect(i - size - thick,0,size,canvas.height,"white");
+	kk = 0;
+	u = 0;
+	x1 = -1; x2 = x1; y1 = x1; y2 = y1;
+	W = 0;
+	for(var i = 0; i <= n+1; i++)
+	{
+		mat[i][0] = -1;
+		mat[i][m+1] = -1;
+	}
+	for(var j = 0; j <= m+1; j++)
+	{
+		mat[0][j] = -1;
+		mat[n+1][j] = -1;
+	}
+}
+
+function animation()
+{
+	q++;
+	if(q == 5) EnterName();
+	drawEverything();
+	moveEverything();
+}
+
+function moveEverything() 
+{
+	
+}
+
+function DRAW()
+{
+	if(turn == 1)
+	{
+		mat[I][J] = 1;
+		showMessage(px + size/2, py + size/2,"X","red",size,"center");
+		turn = 2;
+	}
+	else
+	{
+		mat[I][J] = 0;
+		showMessage(px + size/2, py + size/2,"O","blue",size,"center");
+		turn = 1;
+	}
+}
+
+function drawEverything() 
+{
+	if(player1 != null && player2 != null)
+	{
+		if(turn == 1) showMessage(0,size/2 - 5,player1,"black",size,"left");
+		else showMessage(0,size/2 - 5,player1,"#cdd2d8",size,"left");
+		if(turn == 2) showMessage(canvas.width,size/2 - 5,player2,"black",size,"right");
+		else showMessage(canvas.width,size/2 - 5,player2,"#cdd2d8",size,"right");
+	}
+	
+	W++;
+	if(turn == 2 && player1 != null && W > 50)
+	{
+		AI();
+		DRAW();
+		CheckWinner();
+	}
+	
+	if(x1 > -1)
+	{
+		var CUL;
+		if(turn == 2) CUL = "red";
+		else CUL = "blue";
+		if(idk == 2) line(x1 + size/2, y1, x2 + size/2, y2 + size, CUL, 3);
+		else if(idk == 1) line(x1 , y1 + size/2, x2 + size, y2 + size/2, CUL, 3);
+		else if(idk == 3) line(x1 , y1 , x2 + size, y2 + size, CUL, 3);
+		else line(x1 + size, y1, x2, y2 + size, CUL, 3);
+	}
+	
+	if(u > 0) kk++;
+	if(u > 0 && kk > 5)
+	{
+		if(u == 1) alert(player1 + " WINS !!!");
+		else alert(player2 + " WINS !!!");
+		turn = 3 - T;
+		T = turn;
+		init();
+	}
+}
+
+function AI()
+{	
+	// v[2] = 2 cu cel putin o deschidere
+	// v[3] = 3 cu cel putin o deschidere
+	// v[4] = 4 cu cel putin o deschidere
+	// v[5] = 5 cu cel putin o deschidere
+	// v[6] = 3 cu ambele capete deschise
+	// v[11] = 4 cu ambele capete deschise
+
+	var bestI = -1, bestJ = -1, cate, score, uuu;
+	var VAL = [];
+	var l = 0, vI = [], vJ = [], sum = 0;
+	
+	VAL[1] = 0; VAL[2] = 5; VAL[3] = 15; VAL[4] = 30; VAL[5] = 999999;
+	var mx = -VAL[5];
+	
+	for(I = 1; I <= n; I++) // win
+	{
+		for(J = 1; J <= m; J++)
+		{
+			if(mat[I][J] == -1)
+			{
+				mat[I][J] = 0;
+				evaluate(0);
+				if(v[5] > 0)
+				{
+					bestI = I;
+					bestJ = J;
+				}
+				mat[I][J] = -1;
+			}
+			if(bestI > 0) break;
+		}
+		if(bestI > 0) break;
+	}
+	
+	if(bestI < 0 && bestJ < 0) // lose
+	{
+		for(I = 1; I <= n; I++)
+		{
+			for(J = 1; J <= m; J++)
+			{
+				if(mat[I][J] == -1)
+				{
+					mat[I][J] = 1;
+					evaluate(1);
+					if(v[5] > 0)
+					{
+						bestI = I;
+						bestJ = J;
+					}
+					mat[I][J] = -1;
+				}
+				if(bestI > 0) break;
+			}
+			if(bestI > 0) break;
+		}
+	}
+	
+	if(bestI < 0 && bestJ < 0)  // 3 libere = win
+	{
+		evaluate(0);
+		if(v[6] > 0)
+		{
+			evaluate(1);
+			if(v[4] == 0)
+			{
+				I = v[7];
+				J = v[8];
+				mat[I][J] = 0;				
+				var score1 = 0;
+				
+				evaluate(0);
+				for(var i = 1; i <= 5; i++)
+					score1 += v[i] * VAL[i];
+					
+				mat[I][J] = -1;
+				
+				
+				I = v[9];
+				J = v[10];
+				mat[I][J] = 0;				
+				var score2 = 0;
+				
+				evaluate(0);
+				for(var i = 1; i <= 5; i++)
+					score2 += v[i] * VAL[i];
+					
+				mat[I][J] = -1;
+				
+				evaluate(0);
+				if(score1 > score2)
+				{
+					bestI = v[7];
+					bestJ = v[8];
+				}
+				else
+				{
+					bestI = v[9];
+					bestJ = v[10];
+				}
+				I = bestI;
+				J = bestJ;
+			}
+		}
+	}
+	
+	if(bestI < 0 && bestJ < 0)   // 2 _ 1 win
+	{
+		for(I = 1; I <= n; I++)
+		{
+			for(J = 1; J <= m; J++)
+			{
+				if(mat[I][J] == -1)
+				{
+					mat[I][J] = 0;
+					evaluate(0);
+					if(v[11] > 0)
+					{
+						bestI = I;
+						bestJ = J;
+					}
+					mat[I][J] = -1;
+				}
+				if(bestI > 0) break;
+			}
+			if(bestI > 0) break;
+		}
+	}
+	
+	if(bestI < 0 && bestJ < 0)  // 3 libere = lose
+	{
+		evaluate(1);
+		if(v[6] > 0)
+		{
+			evaluate(0);
+			if(v[4] == 0)
+			{
+				I = v[7];
+				J = v[8];
+				mat[I][J] = 0;				
+				var score1 = 0;
+				
+				evaluate(1);
+				for(var i = 1; i <= 5; i++)
+					score1 += v[i] * VAL[i];
+					
+				mat[I][J] = -1;
+				
+				
+				I = v[9];
+				J = v[10];
+				mat[I][J] = 0;				
+				var score2 = 0;
+				
+				evaluate(1);
+				for(var i = 1; i <= 5; i++)
+					score2 += v[i] * VAL[i];
+					
+				mat[I][J] = -1;
+				
+				evaluate(1);
+				if(score1 > score2)
+				{
+					bestI = v[7];
+					bestJ = v[8];
+				}
+				else
+				{
+					bestI = v[9];
+					bestJ = v[10];
+				}
+				I = bestI;
+				J = bestJ;
+			}
+		}
+	}
+	
+	if(bestI < 0 && bestJ < 0)   // 2 _ 1 = lose
+	{
+		for(I = 1; I <= n; I++)
+		{
+			for(J = 1; J <= m; J++)
+			{
+				if(mat[I][J] == -1)
+				{
+					mat[I][J] = 1;
+					evaluate(1);
+					if(v[11] > 0)
+					{
+						bestI = I;
+						bestJ = J;
+					}
+					mat[I][J] = -1;
+				}
+				if(bestI > 0) break;
+			}
+			if(bestI > 0) break;
+		}
+	}
+	
+	if(bestI < 0 && bestJ < 0) // 3 * 4 win
+	{
+		for(I = 1; I <= n; I++)
+		{
+			for(J = 1; J <= m; J++)
+			{
+				if(mat[I][J] == -1)
+				{
+					mat[I][J] = 0;
+					evaluate(0);
+					if(v[6] > 0 && v[4] > 0)
+					{
+						bestI = I;
+						bestJ = J;
+					}
+					mat[I][J] = -1;
+				}
+				if(bestI > 0) break;
+			}
+			if(bestI > 0) break;
+		}
+	}
+	
+	if(bestI < 0 && bestJ < 0) // 3 * 4 lose
+	{
+		for(I = 1; I <= n; I++)
+		{
+			for(J = 1; J <= m; J++)
+			{
+				if(mat[I][J] == -1)
+				{
+					mat[I][J] = 1;
+					evaluate(1);
+					if(v[6] > 0 && v[4] > 0)
+					{
+						bestI = I;
+						bestJ = J;
+					}
+					mat[I][J] = -1;
+				}
+				if(bestI > 0) break;
+			}
+			if(bestI > 0) break;
+		}
+	}
+	
+	if(bestI < 0 && bestJ < 0) // 3 * 3 win
+	{
+		for(I = 1; I <= n; I++)
+		{
+			for(J = 1; J <= m; J++)
+			{
+				if(mat[I][J] == -1)
+				{
+					mat[I][J] = 0;
+					evaluate(0);
+					if(v[6] > 1)
+					{
+						bestI = I;
+						bestJ = J;
+					}
+					mat[I][J] = -1;
+				}
+				if(bestI > 0) break;
+			}
+			if(bestI > 0) break;
+		}
+		if(bestI > 0)
+		{
+			var num = random_number(3);
+			if(num == 1)
+			{
+				bestI = v[12];
+				bestJ = v[13];
+			}
+			else if(num == 3)
+			{
+				bestI = v[14];
+				bestJ = v[15];
+			}
+		}
+	}
+	
+	if(bestI < 0 && bestJ < 0) // 3 * 3 lose
+	{
+		for(I = 1; I <= n; I++)
+		{
+			for(J = 1; J <= m; J++)
+			{
+				if(mat[I][J] == -1)
+				{
+					mat[I][J] = 1;
+					evaluate(1);
+					if(v[6] > 1)
+					{
+						bestI = I;
+						bestJ = J;
+					}
+					mat[I][J] = -1;
+				}
+				if(bestI > 0) break;
+			}
+			if(bestI > 0) break;
+		}
+		if(bestI > 0)
+		{
+			var num = random_number(3);
+			if(num == 1)
+			{
+				bestI = v[12];
+				bestJ = v[13];
+			}
+			else if(num == 3)
+			{
+				bestI = v[14];
+				bestJ = v[15];
+			}
+		}
+	}
+	
+	if(bestI > 0 && bestJ > 0)
+	{
+		I = bestI;
+		J = bestJ;
+	}	
+	if(bestI == -1 && bestJ == -1)
+	{
+		evaluate(0);
+		if(v[4] > 0)
+		{
+			for(I = 1; I <= n; I++)
+			{
+				for(J = 1; J <= m; J++)
+				{	
+					if(mat[I][J] == -1)
+					{
+						mat[I][J] = 0;
+						evaluate(0);
+						if(v[5] > 0)
+						{
+							bestI = I;
+							bestJ = J;
+						}
+						mat[I][J] = -1;
+					}
+					if(bestI > 0) break;
+				}
+				if(bestI > 0) break;
+			}
+			I = bestI;
+			J = bestJ;
+		}
+		else
+		{
+			evaluate(1);
+			if(v[6] > 0)
+			{
+				var R = random_number(2);
+				// 1 = attack
+				// 2 = defend
+				if(R == 1)
+				{
+					evaluate(0);
+					if(v[4] > 0 || v[3] > 0)
+					{
+						for(I = 1; I <= n; I++)
+						{
+							for(J = 1; J <= m; J++)
+							{
+								uuu = 0;
+								if(mat[I][J] == -1)
+								{
+									var K = 0;
+									if(mat[I-1][J-1] == 1 || mat[I-1][J-1] == 0) K++;
+									if(mat[I-1][J] == 1 || mat[I-1][J] == 0) K++;
+									if(mat[I-1][J+1] == 1 || mat[I-1][J+1] == 0) K++;
+									if(mat[I][J-1] == 1 || mat[I][J-1] == 0) K++;
+									if(mat[I][J+1] == 1 || mat[I][J+1] == 0) K++;
+									if(mat[I+1][J-1] == 1 || mat[I+1][J-1] == 0) K++;
+									if(mat[I+1][J] == 1 || mat[I+1][J] == 0) K++;
+									if(mat[I+1][J+1] == 1 || mat[I+1][J+1] == 0) K++;
+									if(K > 0)
+									{
+										mat[I][J] = 0;
+										evaluate(0);
+										if(v[5] > 0)
+										{
+											bestI = I;
+											bestJ = J;
+										}
+										mat[I][J] = -1;
+										if(bestI > 0) break;
+										if(v[4] > 0)
+										{
+											l++;
+											vI[l] = I;
+											vJ[l] = J;
+										}
+									}
+								}
+							}
+							if(bestI > 0) break;
+						}
+						if(l > 0)
+						{
+							var numb = random_number(l);
+							bestI = vI[numb];
+							bestJ = vJ[numb];
+						}
+					}
+					else R = 2;
+				}
+				if(R == 2)
+				{
+					I = v[7];
+					J = v[8];
+					mat[I][J] = 0;				
+					var score1 = 0;
+					
+					evaluate(0);
+					for(var i = 1; i <= 5; i++)
+						score1 += v[i] * VAL[i];
+						
+					mat[I][J] = -1;
+					
+					
+					I = v[9];
+					J = v[10];
+					mat[I][J] = 0;				
+					var score2 = 0;
+					
+					evaluate(0);
+					for(var i = 1; i <= 5; i++)
+						score2 += v[i] * VAL[i];
+						
+					mat[I][J] = -1;
+					
+					
+					evaluate(1);
+					if(score1 > score2)
+					{
+						bestI = v[7];
+						bestJ = v[8];
+					}
+					else
+					{
+						bestI = v[9];
+						bestJ = v[10];
+					}
+				}
+				
+				I = bestI;
+				J = bestJ;
+			}
+			else
+			{	
+				for(I = 1; I <= n; I++)
+					for(J = 1; J <= m; J++)
+					{
+						uuu = 0;
+						if(mat[I][J] == -1)
+						{
+							var K = 0;
+							if(mat[I-1][J-1] == 1 || mat[I-1][J-1] == 0) K++;
+							if(mat[I-1][J] == 1 || mat[I-1][J] == 0) K++;
+							if(mat[I-1][J+1] == 1 || mat[I-1][J+1] == 0) K++;
+							if(mat[I][J-1] == 1 || mat[I][J-1] == 0) K++;
+							if(mat[I][J+1] == 1 || mat[I][J+1] == 0) K++;
+							if(mat[I+1][J-1] == 1 || mat[I+1][J-1] == 0) K++;
+							if(mat[I+1][J] == 1 || mat[I+1][J] == 0) K++;
+							if(mat[I+1][J+1] == 1 || mat[I+1][J+1] == 0) K++;
+							if(K > 0) 
+							{
+								uuu = 1;
+								mat[I][J] = 0;				
+								score = 0;
+								
+								evaluate(0);
+								for(var i = 1; i <= 5; i++)
+									score += v[i] * VAL[i];
+									
+								evaluate(1);
+								for(var i = 1; i <= 5; i++)
+									score -= v[i] * VAL[i];
+									
+								mat[I][J] = -1;
+							}
+						}
+						if(mx < score && uuu == 1) mx = score;
+					}
+				// //////////////////
+				for(I = 1; I <= n; I++)
+					for(J = 1; J <= m; J++)
+					{
+						if(mat[I][J] == -1) sum ++;
+						uuu = 0;
+						if(mat[I][J] == -1)
+						{
+							var K = 0;
+							if(mat[I-1][J-1] == 1 || mat[I-1][J-1] == 0) K++;
+							if(mat[I-1][J] == 1 || mat[I-1][J] == 0) K++;
+							if(mat[I-1][J+1] == 1 || mat[I-1][J+1] == 0) K++;
+							if(mat[I][J-1] == 1 || mat[I][J-1] == 0) K++;
+							if(mat[I][J+1] == 1 || mat[I][J+1] == 0) K++;
+							if(mat[I+1][J-1] == 1 || mat[I+1][J-1] == 0) K++;
+							if(mat[I+1][J] == 1 || mat[I+1][J] == 0) K++;
+							if(mat[I+1][J+1] == 1 || mat[I+1][J+1] == 0) K++;
+							if(K > 0)
+							{
+								uuu = 1;
+								mat[I][J] = 0;
+							
+								score = 0;
+								evaluate(0);
+								for(var i = 1; i <= 5; i++)
+									score += v[i] * VAL[i];
+									
+								evaluate(1);
+								for(var i = 1; i <= 5; i++)
+									score -= v[i] * VAL[i];					
+								
+								mat[I][J] = -1;
+							}
+						}
+						if(mx == score && uuu == 1)
+						{
+							l++;
+							vI[l] = I;
+							vJ[l] = J;
+						}
+					}
+				if(sum == n*m)
+				{
+					I = parseInt(n/2) + 1;
+					J = parseInt(m/2) + 1;
+				}
+				else if(l == 0)
+				{
+					for(I = 1; I <= n; I++)
+						for(J = 1; J <= m; J++)
+						{
+							if(mat[I][J] == -1)
+							{
+								var K = 0;
+								if(mat[I-1][J-1] == 1 || mat[I-1][J-1] == 0) K++;
+								if(mat[I-1][J] == 1 || mat[I-1][J] == 0) K++;
+								if(mat[I-1][J+1] == 1 || mat[I-1][J+1] == 0) K++;
+								if(mat[I][J-1] == 1 || mat[I][J-1] == 0) K++;
+								if(mat[I][J+1] == 1 || mat[I][J+1] == 0) K++;
+								if(mat[I+1][J-1] == 1 || mat[I+1][J-1] == 0) K++;
+								if(mat[I+1][J] == 1 || mat[I+1][J] == 0) K++;
+								if(mat[I+1][J+1] == 1 || mat[I+1][J+1] == 0) K++;
+								if(K > 0)
+								{
+									l++;
+									vI[l] = I;
+									vJ[l] = J;
+								}
+							}
+						}
+					var numb = random_number(l);
+					I = vI[numb];
+					J = vJ[numb];
+				}
+				else
+				{
+					var numb = random_number(l);
+					I = vI[numb];
+					J = vJ[numb];
+				}
+			}
+		}
+	}
+	px = x[I][J];
+	py = y[I][J];
+}
+
+function evaluate(val)
+{
+	var aux = [];
+	for(var i = 1; i <= 15; i++)
+		v[i] = 0;
+		
+	// orizontal
+	for(var i = 0; i <= n+1; i++)
+	{
+		aux[i] = [];
+		for(var j = 0; j <= m+1; j++)
+			aux[i][j] = mat[i][j];
+	}
+	for(var i = 1; i <= n; i++)
+	{
+		for(var j = 1; j <= m; j++)
+		{
+			cate = 0;
+			var ii = i, jj = j;
+			while(aux[ii][jj] == val)
+			{
+				cate++;
+				aux[ii][jj] = -1;
+				jj++;
+			}
+			if(cate>1 && (aux[ii][jj] == -1 || aux[i][j-1] == -1)) v[cate]++;
+			if(cate == 3 && aux[ii][jj] == -1 && aux[i][j-1] == -1) 
+			{
+				v[6]++;
+				v[7] = ii;
+				v[8] = jj;
+				v[9] = i;
+				v[10] = j-1;
+			}
+			if(cate == 4 && aux[ii][jj] == -1 && aux[i][j-1] == -1)
+			{
+				v[11]++;
+				v[12] = ii;
+				v[13] = jj;
+				v[14] = i;
+				v[15] = j-1;
+			}
+		}
+	}
+	// vertical
+	for(var i = 1; i <= n; i++)
+	{
+		aux[i] = [];
+		for(var j = 1; j <= m; j++)
+			aux[i][j] = mat[i][j];
+	}
+	for(var i = 1; i <= n; i++)
+	{
+		for(var j = 1; j <= m; j++)
+		{
+			cate = 0;
+			var ii = i, jj = j;
+			while(aux[ii][jj] == val)
+			{
+				cate++;
+				aux[ii][jj] = -1;
+				ii++;
+			}
+			if(cate>1 && (aux[ii][jj] == -1 || aux[i-1][j] == -1)) v[cate]++;
+			if(cate == 3 && aux[ii][jj] == -1 && aux[i-1][j] == -1)
+			{
+				v[6]++;
+				v[7] = ii;
+				v[8] = jj;
+				v[9] = i-1;
+				v[10] = j;
+			}
+			if(cate == 4 && aux[ii][jj] == -1 && aux[i-1][j] == -1)
+			{
+				v[11]++;
+				v[12] = ii;
+				v[13] = jj;
+				v[14] = i-1;
+				v[15] = j;
+			}
+		}
+	}
+	// "\"
+	for(var i = 1; i <= n; i++)
+	{
+		aux[i] = [];
+		for(var j = 1; j <= m; j++)
+			aux[i][j] = mat[i][j];
+	}
+	for(var i = 1; i <= n; i++)
+	{
+		for(var j = 1; j <= m; j++)
+		{
+			cate = 0;
+			var ii = i, jj = j;
+			while(aux[ii][jj] == val)
+			{
+				cate++;
+				aux[ii][jj] = -1;
+				ii++;
+				jj++;
+			}
+			if(cate>1 && (aux[ii][jj] == -1 || aux[i-1][j-1] == -1)) v[cate]++;
+			if(cate == 3 && aux[ii][jj] == -1 && aux[i-1][j-1] == -1)
+			{
+				v[6]++;
+				v[7] = ii;
+				v[8] = jj;
+				v[9] = i-1;
+				v[10] = j-1;
+			}
+			if(cate == 4 && aux[ii][jj] == -1 && aux[i-1][j-1] == -1)
+			{
+				v[11]++;
+				v[12] = ii;
+				v[13] = jj;
+				v[14] = i-1;
+				v[15] = j-1;
+			}
+		}
+	}
+	// "/"
+	for(var i = 1; i <= n; i++)
+	{
+		aux[i] = [];
+		for(var j = 1; j <= m; j++)
+			aux[i][j] = mat[i][j];
+	}
+	for(var i = 1; i <= n; i++)
+	{
+		for(var j = 1; j <= m; j++)
+		{
+			cate = 0;
+			var ii = i, jj = j;
+			while(aux[ii][jj] == val)
+			{
+				cate++;
+				aux[ii][jj] = -1;
+				ii++;
+				jj--;
+			}
+			if(cate>1 && (aux[ii][jj] == -1 || aux[i-1][j+1] == -1)) v[cate]++;
+			if(cate == 3 && aux[ii][jj] == -1 && aux[i-1][j+1] == -1)
+			{
+				v[6]++;
+				v[7] = ii;
+				v[8] = jj;
+				v[9] = i-1;
+				v[10] = j+1;
+			}
+			if(cate == 4 && aux[ii][jj] == -1 && aux[i-1][j+1] == -1)
+			{
+				v[11]++;
+				v[12] = ii;
+				v[13] = jj;
+				v[14] = i-1;
+				v[15] = j+1;
+			}
+		}
+	}
+}
+
+canvas.addEventListener("mousedown",mouse_down);
+canvas.addEventListener("mouseup",mouse_up);
+
+function mouse_down(evt) 
+{
+	if(turn == 1)
+	{
+		ok = 1;
+		for(var i = 1; i <= n; i++)
+		{
+			for(var j = 1; j <= m; j++)
+			{
+				if(m_x >= x[i][j] && m_x <= x[i][j] + size && m_y >= y[i][j] && m_y <= y[i][j] + size)
+				{
+					px = x[i][j];
+					py = y[i][j];
+					I = i;
+					J = j;
+				}
+			}
+		}
+	}
+}
+
+function mouse_up(evt) 
+{
+	if(turn == 1)
+	{
+		ok = 0;
+		if(m_x >= px && m_x <= px + size && m_y >= py && m_y <= py + size && mat[I][J] == -1)
+		{
+			DRAW();
+			CheckWinner();
+			W = 0;
+		}
+		else alert("Select a VALID area !!!");
+	}
+}
+
+function CheckWinner()
+{
+	u = 0;
+	for(var i = 1; i <= n; i++)
+	{
+		if(u > 0) break;
+		for(var j = 1; j <= m; j++)
+		{
+			if(mat[i][j] >= 0)
+			{
+				if(mat[i][j] == mat[i][j+1] && mat[i][j] == mat[i][j+2] && mat[i][j] == mat[i][j+3] && mat[i][j] == mat[i][j+4])
+				{
+					if(mat[i][j] == 0) u = 2;
+					else u = 1;
+					x1 = x[i][j];
+					y1 = y[i][j];
+					x2 = x[i][j+4];
+					y2 = y[i][j+4];
+					idk = 1;
+					break;
+				}
+				if(mat[i][j] == mat[i+1][j] && mat[i][j] == mat[i+2][j] && mat[i][j] == mat[i+3][j] && mat[i][j] == mat[i+4][j])
+				{
+					if(mat[i][j] == 0) u = 2;
+					else u = 1;
+					x1 = x[i][j];
+					y1 = y[i][j];
+					x2 = x[i+4][j];
+					y2 = y[i+4][j];
+					idk = 2;
+					break;
+				}
+				if(mat[i][j] == mat[i+1][j+1] && mat[i][j] == mat[i+2][j+2] && mat[i][j] == mat[i+3][j+3] && mat[i][j] == mat[i+4][j+4])
+				{
+					if(mat[i][j] == 0) u = 2;
+					else u = 1;
+					x1 = x[i][j];
+					y1 = y[i][j];
+					x2 = x[i+4][j+4];
+					y2 = y[i+4][j+4];
+					idk = 3;
+					break;
+				}
+				if(mat[i][j] == mat[i+1][j-1] && mat[i][j] == mat[i+2][j-2] && mat[i][j] == mat[i+3][j-3] && mat[i][j] == mat[i+4][j-4])
+				{
+					if(mat[i][j] == 0) u = 2;
+					else u = 1;
+					x1 = x[i][j];
+					y1 = y[i][j];
+					x2 = x[i+4][j-4];
+					y2 = y[i+4][j-4];
+					idk = 4;
+					break;
+				}
+			}
+		}
+	}
+}
+
+
+function showMessage(x_coord,y_coord,msg,cul,SIZE,align)
+{	
+	canvasContext.moveTo(x_coord,0);
+	canvasContext.lineTo(x_coord,canvas.height);
+	//canvasContext.stroke();
+	canvasContext.textAlign = align;
+	
+	canvasContext.moveTo(0,y_coord);
+	canvasContext.lineTo(canvas.width,y_coord);
+	//canvasContext.stroke();
+	canvasContext.textBaseline = 'middle'; 
+	
+	canvasContext.fillStyle = cul;
+	canvasContext.font = SIZE + 'px Segoe UI';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, drawColor, t)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.lineWidth = t;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==13)
+	{
+		enter ++;
+	}
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+function pow(a, b)
+{
+	var nr = 1;
+	for(var i = 1; i <= b; i++)
+		nr = nr * a;
+	return nr;
+}
+
+function getInput()
+{
+	var txt = prompt("Please enter your name:", "Player 1");
+	return txt;
+}
+
+</script>
+</body>
+</html>

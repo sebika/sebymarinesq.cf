@@ -1,0 +1,147 @@
+<html>
+
+<head>
+
+	<title>Phyllotaxis</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:5;}</style>
+<p align = "center"> <canvas id ="gameCanvas"></canvas> </p>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+
+var colors     = ['aqua', 'blue', 'green', 'lime', 'red', 'orange', 'yellow'];
+var m_x, m_y;
+const fps = 300;
+const c = 10;  // zoom
+const ANG = 137.5;
+const size = 5;
+
+var angle;
+var radius;
+var x, y;
+var n = 0;
+
+var xp = [];
+var yp = [];
+var cul = [];
+
+window.onload = function() 
+{
+	init();
+	window.addEventListener("resize", init, false);
+	setInterval(Phyllotaxis, 1000/fps);	
+}
+
+function init()
+{
+	var myWidth = window.innerWidth;
+	var myHeight = window.innerHeight;
+	canvas.width = 800;
+	canvas.height = 600;
+	colorRect(0,0,canvas.width,canvas.height,'black');
+}
+
+function Phyllotaxis()
+{
+	drawEverything();
+	moveEverything();
+}
+
+function moveEverything() 
+{
+	angle = ((n * ANG)*Math.PI)/180;
+	radius = c * Math.sqrt(n);
+	x = radius * Math.cos(angle) + canvas.width / 2;
+	y = radius * Math.sin(angle) + canvas.height / 2;
+	xp[n] = x;
+	yp[n] = y;
+	n++;
+	//cul[n] = 'rgb( ' + Math.floor(n)%256 + ',' + Math.floor(n) % 256 + ',' + Math.floor(n)%256 + ')';
+	cul[n] = colors[n%7];
+	//cul[n] = 'white';
+	
+}
+
+function drawEverything() 
+{
+	colorCircle(x,y,size,cul[n]);
+	/*colorRect(0,0,canvas.width,canvas.height,'black');
+	for(var i = 0; i < n; i++)
+		colorCircle(xp[i],yp[i],size,cul[i]);*/
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+	canvasContext.stroke();
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, drawColor)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==37)
+	{
+		alert("left");
+	}
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+
+</script>
+</body>
+</html>

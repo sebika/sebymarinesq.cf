@@ -1,0 +1,173 @@
+<html>
+
+<head>
+
+	<title>Planets</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:5;  overflow:hidden;}</style>
+<p align = 'center'>
+<canvas id ="gameCanvas"></canvas>
+</p>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+var m_x, m_y;
+const fps = 100;
+const R1 = 57*2, R2 = 108*2, R3 = 149*2, R4 = 228*2;
+var x_venus, y_venus, ang_venus = 0;
+var x_earth, y_earth, ang_earth = 0;
+var i = random_number(20) - 1;
+var nr = 0;
+
+window.onload = function() 
+{
+	init();
+	
+	setInterval(solarSystem, 1000/fps);	
+}
+
+function init()
+{
+	var myWidth = window.innerWidth - 10;
+	var myHeight = window.innerHeight - 10;
+	canvas.width = 800;
+	canvas.height = 600;
+	colorRect(0,0,canvas.width,canvas.height,'#0C1021');
+	colorCircle(canvas.width/2, canvas.height/2, 15, 'yellow');
+	emptyCircle(canvas.width/2, canvas.height/2, R1, 'white');
+	emptyCircle(canvas.width/2, canvas.height/2, R2, 'white');
+	emptyCircle(canvas.width/2, canvas.height/2, R3, 'white');
+	emptyCircle(canvas.width/2, canvas.height/2, R4, 'white');
+}
+
+function solarSystem()
+{
+	drawEverything();
+	moveEverything();
+}
+
+function moveEverything() 
+{
+	ang_earth -= 0.1;
+	ang_venus = ang_earth * 1.176;
+	x_earth = canvas.width / 2 + R3 * Math.sin(ang_earth);
+	y_earth = canvas.height / 2 + R3 * Math.cos(ang_earth);
+	x_venus = canvas.width / 2 + R2 * Math.sin(ang_venus);
+	y_venus = canvas.height / 2 + R2 * Math.cos(ang_venus);
+	nr ++;
+	if(nr % 500 == 0) i = random_number(20) - 1;
+}
+
+function drawEverything() 
+{
+	line(x_earth, y_earth, x_venus, y_venus, colors[i], 1);
+	/*colorRect(0,0,canvas.width,canvas.height,'#0C1021');
+	colorCircle(canvas.width/2, canvas.height/2, 15, 'yellow');
+	emptyCircle(canvas.width/2, canvas.height/2, R1, 'white');
+	emptyCircle(canvas.width/2, canvas.height/2, R2, 'white');
+	emptyCircle(canvas.width/2, canvas.height/2, R3, 'white');
+	emptyCircle(canvas.width/2, canvas.height/2, R4, 'white');
+	colorCircle(x_venus, y_venus, 5, "blue");
+	colorCircle(x_earth, y_earth, 8, "green");*/
+}
+
+function showMessage(x_coord,y_coord,msg)
+{
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = '50px Segoe UI';
+	canvasContext.textAlign = 'center';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function emptyCircle(X,Y,r,drawColor) 
+{
+
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.stroke();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, drawColor, thick)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.lineWidth = thick;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+	
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==37)
+	{
+		alert("left");
+	}
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+
+</script>
+</body>
+</html>

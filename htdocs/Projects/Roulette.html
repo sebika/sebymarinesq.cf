@@ -1,0 +1,557 @@
+<html>
+
+<head>
+
+	<title>Roulette</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:5;  overflow:hidden;}</style>
+<p align = 'center'>
+<canvas id ="gameCanvas"></canvas>
+</p>
+
+<script>
+
+var canvas;
+var canvasContext;
+
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+var m_x, m_y;
+const fps = 240;
+const size = 40;
+const border = 8;
+const gap = 4;
+const wait = 12; //sec
+
+var center_x = [], val = [];
+var prev_x = [], prev_val = [];
+var speed = 0;
+var spd = 0, acc = 0;
+var d = 0;
+var nr = 0;
+var c = [];
+var ok = 0;
+
+var bank = 100, bet = 0, win = 0;
+
+var slider_x1, slider_x2, slider_y;
+var slider_x;
+
+var red = 0, green = 0, black = 0;
+var valid_red = 0, valid_green = 0, valid_black = 0;
+var u = 1, BET1 = 0, BET2 = 0, idk = 0;
+var roll = 0;
+
+function init()
+{
+	var myWidth = 860;
+	var myHeight = 640;
+	canvas.width = myWidth;
+	canvas.height = myHeight;
+	
+	bank = 100;
+	u = 1;
+	//idk = 0;
+	
+	for(var i = 0; i <= 15; i++)
+		c[i] = 0;
+	
+	center_x[1] = border + size;
+	for(var i = 2; i <= 15; i++)
+		center_x[i] = center_x[i-1] + size * 2 + gap;
+		
+	for(var i = 1; i <= 8; i++)
+	{
+		prev_x[i] = 31 + (i-1)*35;
+		prev_val[i] = -1;
+	}
+	
+	val[1] = 1; val[3] = 2; val[5] = 3; val[7] = 4; val[10] = 5; val[12] = 6; val[14] = 7;
+	val[2] = 14; val[4] = 13; val[6] = 12; val[9] = 11, val[11] = 10; val[13] = 9; val[15] = 8;
+	val[8] = 0;
+	
+	slider_x1 = canvas.width / 2 + 30;
+	slider_x2 = canvas.width - 30;
+	slider_y = canvas.height/2 + 125;
+	slider_x = slider_x1;
+	
+	ROLL();
+}
+
+window.onload = function() 
+{
+	init();
+	//window.addEventListener("resize", init, false);
+	setInterval(game, 1000/fps);	
+}
+
+function game()
+{
+	nr ++;
+	
+	drawEverything();
+	if(nr/fps >= wait) 
+	{
+		valid_red = 0; 
+		valid_green = 0; 
+		valid_black = 0;
+		u = 1;
+		moveEverything();
+		showMessage(canvas.width/2,canvas.height/2-180,"Rolling ... ",30);
+		roll = 1;
+	}
+	else 
+	{
+		if(u == 1)
+		{
+			valid_red = 1; 
+			valid_green = 1; 
+			valid_black = 1;
+			BET1 = 0;
+			BET2 = 0;
+		}
+		u = 0;
+		var num = (wait * fps - nr) / fps;
+		num = num.toFixed(2);
+		showMessage(canvas.width/2,canvas.height/2-180,"Rolling in " + num + " ...",30);
+		roll = 0;
+	}
+}
+
+function moveEverything() 
+{
+	speed -= spd;
+	speed *= acc;
+	if(speed < 0)
+	{
+		var numb;
+		speed = 0;
+		nr = 0;
+		numb = NUMBER();
+		for(var i = 9; i >= 1; i--)
+			prev_val[i] = prev_val[i-1];
+		prev_val[1] = numb;
+		c[numb]++;
+		ROLL();
+	}
+	else
+	{
+		for(var i = 1; i <= 15; i++)
+		{
+			center_x[i] -= speed;
+			var ant = i - 1;
+			if(ant == 0) ant = 15;
+			if(center_x[i] <= -size) 
+				center_x[i] = center_x[ant] + gap + size * 2;
+		}
+		if(center_x[1] > center_x[15]) center_x[1] = center_x[15] + gap + size*2;   //??????????
+	}
+}
+
+function drawEverything() 
+{
+	colorRect(0,0,canvas.width,canvas.height,"#1F2126");
+	colorRect(0,canvas.height/2-45,canvas.width,90,"#1A1B20");
+	for(var i = 1; i <= 15; i++)
+	{
+		if(val[i] == 0) colorCircle(center_x[i],canvas.height/2,size,'#76BD58');
+		else
+		{
+			if(val[i] <= 7) colorCircle(center_x[i],canvas.height/2,size,'#C73150');
+			else colorCircle(center_x[i],canvas.height/2,size,'#4A4B4F');
+		}
+		showMessage(center_x[i],canvas.height/2,val[i],35);
+	}
+	colorRect(canvas.width / 2 - 2.5, canvas.height/2 - 43, 5, 86, "white");
+	
+	canvasContext.strokeStyle = "#1A1B20";
+	canvasContext.lineWidth = 6;
+    canvasContext.strokeRect(0,canvas.height/2-45,canvas.width,90);
+	
+	/* --------------------------------------------------------------------------------------------- */
+	
+	showMessage(border*10 - 3,canvas.height/2-125,"Previous rolls:",20);
+	for(var i = 1; i <= 8; i++)
+	{
+		if(prev_val[i] == -1) colorCircle(prev_x[i],canvas.height/2 - 95,size/2.5,'#aaabaf');
+		else if(prev_val[i] == 0) colorCircle(prev_x[i],canvas.height/2 - 95,size/2.5,'#76BD58');
+		else
+		{
+			if(prev_val[i] <= 7) colorCircle(prev_x[i],canvas.height/2 - 95,size/2.5,'#C73150');
+			else colorCircle(prev_x[i],canvas.height/2 - 95,size/2.5,'#4A4B4F');;
+		}
+		if(prev_val[i] != -1) showMessage(prev_x[i],canvas.height/2 - 95,prev_val[i],15);
+		else showMessage(prev_x[i],canvas.height/2 - 95,"?",15);
+	}
+	showMessage(31,canvas.height/2-70,"LAST",12);
+	
+	/* --------------------------------------------------------------------------------------------- */
+	
+	colorRect(0,0,canvas.width,70,"#1A1B20");
+	var currency = new Image();
+	currency.src = "Images/carrot.png";
+	canvasContext.drawImage(currency,canvas.width - 160,15,40,40);
+	var numb = bank;
+	numb = numb.toFixed(2);
+	showMessageLeft(canvas.width - 115,35,numb,25);
+	
+	var numb = BET1 + BET2;
+	numb = numb.toFixed(2);
+	showMessageLeft(30,35,"Total bet: ",25);
+	canvasContext.drawImage(currency,135,15,40,40);
+	showMessageLeft(180,35,numb,25);
+	
+	/* --------------------------------------------------------------------------------------------- */
+	
+	colorRect(0,canvas.height/2 + 100,canvas.width,50,"#1A1B20");
+	if(red + green + black < 2 && roll == 0 && idk == 1)
+	{
+		canvasContext.drawImage(currency,70,canvas.height/2 + 112.5,30,30);
+		var numb;
+		numb = ((slider_x - slider_x1) * 100 / (slider_x2 - slider_x1)) * bank / 100;
+		bet = numb;
+		numb = numb.toFixed(2);
+		showMessageLeft(110,canvas.height/2 + 125,numb,20);
+	}
+	//showMessage(50,canvas.height/2 + 125,"Bet: ",20);
+	
+	/* --------------------------------------------------------------------------------------------- */
+	
+	colorRect(265, 430, 1, 30, "white");
+	colorRect(335, 430, 1, 30, "white");
+	
+	if(m_x >= 180 && m_y >= 420 && m_x <= 265 && m_y <= 470 && roll == 0 && red + green + black < 2) showMessage1(220,canvas.height/2 + 125,"Clear",30,"#8b8d8e");
+		else showMessage1(220,canvas.height/2 + 125,"Clear",30,"white");
+	if(m_x >= 265 && m_y >= 420 && m_x <= 335 && m_y <= 470 && roll == 0 && red + green + black < 2) showMessage1(300,canvas.height/2 + 125,"1/2",30,"#8b8d8e");
+		else showMessage1(300,canvas.height/2 + 125,"1/2",30,"white");
+	if(m_x >= 335 && m_y >= 420 && m_x <= 415 && m_y <= 470 && roll == 0 && red + green + black < 2) showMessage1(380,canvas.height/2 + 125,"Max",30,"#8b8d8e");
+		else showMessage1(380,canvas.height/2 + 125,"Max",30,"white");	
+	
+	colorRect(slider_x1,slider_y,slider_x2 - slider_x1,1,"#bbbcbf");
+	for(var i = 0; i <= 100; i += 25)
+		colorRect(slider_x1 + i / 100 *(slider_x2 - slider_x1), slider_y - 5, 3, 10, "white");
+	colorRect(slider_x, slider_y - 20, 5, 40, "white");
+	
+	if(ok == 1 && red + green + black < 2 && roll == 0)
+	{
+		if(m_x > slider_x2 || m_x < slider_x1 && ok == 1)
+		{
+			ok = 0;
+			if(m_x < slider_x1) slider_x = slider_x1;
+			else if(m_x > slider_x2 - 5) slider_x = slider_x2;
+		}
+		if(ok == 1)
+		{
+			if(m_x >= slider_x1 - 100 && m_x <= slider_x2 + 100 && m_y <= slider_y + 50 && m_y >= slider_y - 50)
+			{
+				if(m_x < slider_x1) slider_x = slider_x1;
+				else if(m_x > slider_x2 - 5) slider_x = slider_x2;
+				else slider_x = m_x;
+				idk = 1;
+			}
+		}
+	}
+	
+	/* --------------------------------------------------------------------------------------------- */
+	
+	if(m_x >= canvas.width / 4 - 75 && m_x <= canvas.width / 4 + 75 && m_y >= canvas.height - 140 && m_y <= canvas.height - 50 && roll == 0)
+		colorRect(canvas.width / 4 - 75, canvas.height - 140, 150, 90, "#CE4357");
+	else colorRect(canvas.width / 4 - 75, canvas.height - 140, 150, 90, "#C73150");
+	showMessage(canvas.width / 4, canvas.height - 95, "WIN X2", 35);
+	if(red == 1)
+	{
+		canvasContext.drawImage(currency,canvas.width / 4 - 75, canvas.height - 45,30,30);
+		var w = BET1 * 2;
+		w = w.toFixed(2);
+		showMessageLeft(canvas.width / 4 - 40, canvas.height - 30,w,25);
+	}
+	
+	if(m_x >= canvas.width / 2 - 75 && m_x <= canvas.width / 2 + 75 && m_y >= canvas.height - 140 && m_y <= canvas.height - 50  && roll == 0)
+		colorRect(canvas.width / 2 - 75, canvas.height - 140, 150, 90, "#88D962");
+	else colorRect(canvas.width / 2 - 75, canvas.height - 140, 150, 90, "#76BD58");
+	showMessage(canvas.width / 2, canvas.height - 95, "WIN X14", 35);
+	if(green == 1)
+	{
+		canvasContext.drawImage(currency,canvas.width / 2 - 75, canvas.height - 45,30,30);
+		var w = BET2 * 14;
+		w = w.toFixed(2);
+		showMessageLeft(canvas.width / 2 - 40, canvas.height - 30,w,25);
+	}
+	
+	if(m_x >= canvas.width / 4 * 3 - 75 && m_x <= canvas.width / 4 * 3 + 75 && m_y >= canvas.height - 140 && m_y <= canvas.height - 50  && roll == 0)
+		colorRect(canvas.width / 4 * 3 - 75, canvas.height - 140, 150, 90, "#626267");
+	else colorRect(canvas.width / 4 * 3 - 75, canvas.height - 140, 150, 90, "#4A4B4F");
+	showMessage(canvas.width / 4 * 3, canvas.height - 95, "WIN X2", 35);
+	if(black == 1)
+	{
+		canvasContext.drawImage(currency,canvas.width / 4 * 3 - 75, canvas.height - 45,30,30);
+		var w = BET1 * 2;
+		w = w.toFixed(2);
+		showMessageLeft(canvas.width / 4 * 3 - 40, canvas.height - 30,w,25);
+	}
+
+	/* --------------------------------------------------------------------------------------------- */
+	
+	//showMessageLeft(30, canvas.height / 2 + 80, "+0.1  |  +1  |  +10  |  +100  |  +1000",15);	
+}
+
+function NUMBER()
+{
+	var min = 100000, nrr;
+	for(var i = 1; i <= 15; i++)
+	{
+		var dif;
+		dif = center_x[i] - canvas.width / 2;
+		if(dif < 0) dif = -dif;
+		if(min > dif)
+		{
+			min = dif;
+			nrr = val[i];
+		}
+	}
+	
+	if(nrr == 0 && green == 1) bank += BET2 * 14;
+	else if(nrr <= 7 && red == 1) bank += BET1 * 2;
+	else if(nrr > 7 && black == 1) bank += BET1 * 2;
+	
+	red = 0;
+	green = 0;
+	black = 0;
+	idk = 0;
+	
+	if(bank == 0) 
+	{
+		alert("GAME OVER !!!\nPress OK to start again");
+		init();
+	}
+	
+	return nrr;
+}
+
+function ROLL()
+{
+	spd = (40 + random_number(110)) / 100000;
+	acc = (99780 + random_number(120)) / 100000;
+	speed = (6000 + random_number(7000)) / 1000;
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+function handleMouseDown(evt) 
+{
+	ok = 1;
+	if(m_x > slider_x2 || m_x < slider_x1 && ok == 1) ok = 0;
+	//idk = 0;
+}
+
+function handleMouseUp(evt) 
+{
+	ok = 0;
+}
+
+function handleMouseClick(evt) 
+{
+	if(red + green + black < 2  && roll == 0)
+	{
+		if(m_x >= 180 && m_y >= 420 && m_x <= 265 && m_y <= 470) 
+		{
+			slider_x = slider_x1;
+			idk = 0;
+		}
+		if(m_x >= 265 && m_y >= 420 && m_x <= 335 && m_y <= 470)
+		{
+			slider_x = (slider_x1 + slider_x2) / 2 ;
+			idk = 1;
+		}
+		if(m_x >= 335 && m_y >= 420 && m_x <= 415 && m_y <= 470)
+		{
+			slider_x = slider_x2;
+			idk = 1;
+		}
+	}
+	if(idk == 1)
+	{
+		if(m_x >= canvas.width / 4 - 75 && m_x <= canvas.width / 4 + 75 && m_y >= canvas.height - 140 && m_y <= canvas.height - 50 && valid_red == 1)
+		{
+			idk = 0;
+			if(bet == 0) 
+			{
+				ok = 0;
+				alert("Place a valid bet");
+			}
+			else
+			{
+				red = 1;
+				valid_red = 0; 
+				valid_black = 0;
+				BET1 = bet;
+				bank -= BET1;
+			}
+		}
+		if(m_x >= canvas.width / 2 - 75 && m_x <= canvas.width / 2 + 75 && m_y >= canvas.height - 140 && m_y <= canvas.height - 50 && valid_green == 1)
+		{
+			idk = 0;
+			if(bet == 0)
+			{
+				ok = 0;
+				alert("Place a valid bet");
+			}
+			else
+			{
+				green = 1;
+				valid_green = 0; 
+				BET2 = bet;
+				bank -= BET2;
+			}
+		}
+		if(m_x >= canvas.width / 4 * 3 - 75 && m_x <= canvas.width / 4 * 3 + 75 && m_y >= canvas.height - 140 && m_y <= canvas.height - 50 && valid_black ==1)
+		{
+			idk = 0;
+			if(bet == 0) 
+			{
+				ok = 0;
+				alert("Place a valid bet");
+			}
+			else
+			{
+				black = 1;
+				valid_red = 0; 
+				valid_black = 0;
+				BET1 = bet;
+				bank -= BET1;
+			}
+		}
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+canvas.addEventListener('mousedown',handleMouseDown);
+
+canvas.addEventListener('mouseup',handleMouseUp);
+
+canvas.addEventListener('mousedown',handleMouseClick);
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, drawColor)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==37)
+	{
+		alert("left");
+	}
+}
+
+function showMessage(x_coord,y_coord,msg,s)
+{	
+	canvasContext.moveTo(x_coord,0);
+	canvasContext.lineTo(x_coord,canvas.height);
+	//canvasContext.stroke();
+	canvasContext.textAlign = 'center';
+	
+	canvasContext.moveTo(0,y_coord);
+	canvasContext.lineTo(canvas.width,y_coord);
+	//canvasContext.stroke();
+	canvasContext.textBaseline = 'middle'; 
+	
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = s + 'px Segoe UI';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function showMessage1(x_coord,y_coord,msg,s,cul)
+{	
+	canvasContext.moveTo(x_coord,0);
+	canvasContext.lineTo(x_coord,canvas.height);
+	//canvasContext.stroke();
+	canvasContext.textAlign = 'center';
+	
+	canvasContext.moveTo(0,y_coord);
+	canvasContext.lineTo(canvas.width,y_coord);
+	//canvasContext.stroke();
+	canvasContext.textBaseline = 'middle'; 
+	
+	canvasContext.fillStyle = cul;
+	canvasContext.font = s + 'px Segoe UI';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function showMessageLeft(x_coord,y_coord,msg,s)
+{	
+	canvasContext.moveTo(x_coord,0);
+	canvasContext.lineTo(x_coord,canvas.height);
+	//canvasContext.stroke();
+	canvasContext.textAlign = 'left';
+	
+	canvasContext.moveTo(0,y_coord);
+	canvasContext.lineTo(canvas.width,y_coord);
+	//canvasContext.stroke();
+	canvasContext.textBaseline = 'middle'; 
+	
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = s + 'px Segoe UI';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+
+</script>
+</body>
+</html>

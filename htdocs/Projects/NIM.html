@@ -1,0 +1,336 @@
+<html>
+
+<head>
+
+	<title>Nim</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:5;  overflow:hidden;}</style>
+<p align = 'center'>
+<canvas id ="gameCanvas"></canvas>
+</p>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+var m_x, m_y;
+const fps = 60;
+const border1 = 35;
+const border2 = 150;
+const gapy = 150;
+const gapx = 85;
+
+var x = [], y = [], u = [], h = [], s = [];
+var width = 50, height = 100;
+
+var x1, x2, y1, y2, ok = 0;
+var turn = 1;
+
+var back = new Image();
+back.src = "Images/nim.jpg";
+
+var stick = new Image();
+stick.src = "Images/I.png";
+
+var rstick = new Image();
+rstick.src = "Images/Ir.png";
+
+window.onload = function() 
+{
+	init();
+	//window.addEventListener("resize", init, false);
+	setInterval(nim, 1000/fps);	
+}
+
+function init()
+{
+	var myWidth = 860;
+	var myHeight = 640;
+	canvas.width = myWidth;
+	canvas.height = myHeight;
+	canvasContext.drawImage(back,0,0,canvas.width,canvas.height);
+	
+	for(var i = 1; i <= 4; i++)
+	{
+		x[i] = [];
+		y[i] = [];
+		u[i] = [];
+		h[i] = [];
+		s[i] = 0;
+		for(var j = 1; j <= 7; j++)
+		{
+			x[i][j] = border2 + (j-1) * gapx;
+			y[i][j] = border1 + (i-1) * gapy;
+			u[i][j] = 0;
+			h[i][j] = 0;
+		}
+	}
+	u[1][4] = 1;
+	u[2][3] = 1; u[2][4] = 1; u[2][5] = 1;
+	u[3][2] = 1; u[3][3] = 1; u[3][4] = 1; u[3][5] = 1; u[3][6] = 1;
+	u[4][1] = 1; u[4][2] = 1; u[4][3] = 1; u[4][4] = 1; u[4][5] = 1; u[4][6] = 1; u[4][7] = 1;
+}
+
+function nim()
+{
+	drawEverything();
+}
+
+function drawEverything() 
+{
+	canvasContext.drawImage(back,0,0,canvas.width,canvas.height);
+	
+	hightlight();
+	
+	for(var i = 1; i <= 4; i++)
+		for(var j = 1; j <= 7; j++)
+			if(u[i][j] == 1) 
+			{
+				if(h[i][j] == 0) canvasContext.drawImage(stick,x[i][j],y[i][j],width,height);
+				else canvasContext.drawImage(rstick,x[i][j],y[i][j],width,height);
+			}
+			
+	if(ok == 1) 
+	{
+		x2 = m_x;
+		y2 = m_y;
+	}
+	line(x1,y1,x2,y2,"white");
+	
+	if(turn == 1) showMessage(border2,border1,"PLAYER 1","white");
+	else showMessage(border2,border1,"PLAYER 1","gray");
+	if(turn == 2) showMessage(canvas.width - border2,border1,"PLAYER 2","white");
+	else showMessage(canvas.width - border2,border1,"PLAYER 2","gray");
+	
+	if(ok == 1 && m_x < 30 || m_x > canvas.width - 30 || m_y < border1 || m_y > canvas.height - border1) resetLine();
+}
+
+function hightlight()
+{
+	for(var i = 1; i <= 4; i++)
+		s[i] = 0;
+	for(var i = 1; i <= 4; i++)
+		for(var j = 1; j <= 7; j++)
+			if(u[i][j] == 1)
+			{
+				h[i][j] = 0;
+				for(var px = x[i][j]; px <= x[i][j] + width; px += 0.1)
+				{	
+					var py;
+					py = (px*y2 + x2*y1 - x1*y2 - px*y1) / (x2 - x1);
+					if(py >= y[i][j] && py <= y[i][j] + height) 
+					{
+						if(px >= x1 && px <= x2)
+						{
+							h[i][j] = 1;
+							break;
+						}
+						if(px >= x2 && px <= x1)
+						{
+							h[i][j] = 1;
+							break;
+						}
+					}
+				}
+				s[i] += h[i][j];
+			}
+	var k=0;
+	for(var i = 1; i <= 4; i++)
+		if(s[i] > 0) k++;
+	if(ok == -1)
+	{
+		if(k == 1) cut();
+		else alert("INVALID CUT");
+		resetLine();
+	}
+	
+}
+
+function cut()
+{
+	var sum = 0;
+	for(var i = 1; i <= 4; i++)
+		for(var j = 1; j <= 7; j++)
+		{
+			if(h[i][j] == 1) u[i][j] = 0;
+			sum += u[i][j];
+		}
+	for(var i = 1; i <= 4; i++)
+	{
+		var S = 0;
+		for(var j = 1; j <= 7; j++)
+			S += u[i][j];
+		for(var j = 1; j <= 7; j++)
+			u[i][j] = 0;
+		var p1 = 4, q = -1, nr = 1;
+		while(S > 0)
+		{
+			u[i][p1] = 1;
+			S --;
+			p1 += q*nr;
+			nr++;
+			q = q * -1;
+		}
+	}
+	console.log(sum);
+	if(sum == 0)
+	{
+		if(turn == 1) alert("PLAYER 2 WINS !!!");
+		else alert("PLAYER 1 WINS !!!");
+		turn = 1;
+		init();
+		resetLine();
+	}
+	else if(sum == 1)
+	{
+		if(turn == 1) alert("PLAYER 1 WINS !!!");
+		else alert("PLAYER 2 WINS !!!");
+		turn = 1;
+		init();
+		resetLine();
+	}
+	else
+	{
+		if(turn == 1) turn = 2;
+		else turn = 1;
+	}
+}
+
+function resetLine()
+{
+	x1 = 0;
+	y1 = 0;
+	x2 = 0;
+	y2 = 0;
+	ok = 0;
+}
+
+function line(x1, y1, x2, y2, drawColor)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.lineWidth = 5;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==37)
+	{
+		alert("left");
+	}
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+canvas.addEventListener("mousedown",mouse_down);
+
+canvas.addEventListener("mouseup",mouse_up);
+
+function mouse_down(evt) 
+{
+	if(ok != -1)
+	{
+		ok = 1;
+		x1 = m_x;
+		y1 = m_y;
+		x2 = x1;
+		y2 = y1;
+	}
+}
+
+function mouse_up(evt) 
+{
+	if(ok == 1)
+	{
+		x2 = m_x;
+		y2 = m_y;
+	}
+	ok = -1;
+}
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+function map(nr, l1, r1, l2, r2)
+{
+	var p;
+	p = (nr - l1) * 100 / (r1 - l1);
+	return l2 + p / 100 * (r2 - l2);
+}
+
+function showMessage(x_coord,y_coord,msg,cul)
+{	
+	canvasContext.moveTo(x_coord,0);
+	canvasContext.lineTo(x_coord,canvas.height);
+	//canvasContext.stroke();
+	canvasContext.textAlign = 'center';
+	
+	canvasContext.moveTo(0,y_coord);
+	canvasContext.lineTo(canvas.width,y_coord);
+	//canvasContext.stroke();
+	canvasContext.textBaseline = 'middle'; 
+	
+	canvasContext.fillStyle = cul;
+	canvasContext.font = '50px Segoe UI';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+
+</script>
+</body>
+</html>

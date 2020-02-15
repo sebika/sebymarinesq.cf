@@ -1,0 +1,493 @@
+<html>
+
+<head>
+
+	<title>Fireworks</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:0;}</style>
+<canvas id ="gameCanvas"></canvas>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+var myWidth = window.innerWidth;
+var myHeight = window.innerHeight;
+canvas.width = myWidth;
+canvas.height = myHeight;
+
+
+var colors     = ["blue", "green", "cyan", "lime", "maroon", "navy", "purple", "red", "yellow", "gold", "pink", "orange"];
+var m_x, m_y;
+
+const fps = 120;
+const trail = 25;
+const fireworks = 2;
+const particle_per_firework = 101;
+const R = 5;
+const explosion_r = 100;
+const speed = 0.45;
+const r_dicrease_rate = 60;
+const gradient_speed = 9;
+
+var x1, y1, x2, y2;
+var f_x1 = [], f_y1 = [], f_x2 = [], f_y2 = [];
+var ok = [];
+var xparticle = [];
+var yparticle = [];
+var c = [];
+var centerx = [];
+var centery = [];
+var idk = [];
+var r = [];
+var r_rand_speed = [];
+var color_gradient = [];
+var explosion = [];
+
+var xd = 0, xdd = 0;
+
+window.onload = function() 
+{
+	/*init();
+	window.addEventListener("resize", init, false);*/
+	
+	start();
+	setInterval(game, 1000/fps);	
+}
+
+function start()
+{
+	for(var i = 0; i < fireworks; i++)
+	{
+		xparticle[i] = [];
+		yparticle[i] = [];
+		r[i] = [];
+		r_rand_speed[i] = [];
+		for(var j = 0; j < particle_per_firework; j++)
+		{
+			xparticle[i][j] = 0;
+			yparticle[i][j] = 0;
+			r[i][j] = R;
+			r_rand_speed[i][j] = random_number(r_dicrease_rate);
+		}
+		spawnFirework();
+		f_x1[i] = x1;
+		f_y1[i] = y1;
+		f_x2[i] = x2;
+		f_y2[i] = y2;
+		c[i] = colors[random_number(12)-1];
+		ok[i] = 0;
+		centerx[i] = canvas.width/2;
+		centery[i] = canvas.height/2 - particle_per_firework / 30;
+		idk[i] = 10;
+		color_gradient[i] = 0;
+		explosion[i] = explosion_r + random_number(150);
+	}
+}
+
+function init()
+{
+	var myWidth = window.innerWidth - 10;
+	var myHeight = window.innerHeight - 10;
+	canvas.width = myWidth;
+	canvas.height = myHeight;
+}
+
+function game()
+{
+	drawEverything();
+	moveEverything();
+}
+
+function drawEverything() 
+{
+	colorRect(0,0,canvas.width,canvas.height,'#00763C');
+	for(var i = 0; i < fireworks; i++)
+	{
+		if(ok[i] == 0) line(f_x1[i], f_y1[i], f_x2[i], f_y2[i], 'black');
+		else 
+		{
+			for(var j = particle_per_firework; j > 0; j--)
+				colorCircle(xparticle[i][j],yparticle[i][j],r[i][j],c[i],i);
+		}
+	}
+}
+
+function moveEverything() 
+{
+	for(var i = 0; i < fireworks; i++)
+	{
+		if(canvas.width/2 - f_x2[i] > -1 && canvas.width/2 - f_x2[i] < 1 && ok[i] == 0)
+		{
+			spawnParticle(i);
+			ok[i] = 1;
+			xd ++;
+		}
+		if(ok[i] == 0)
+		{
+			color_gradient[i] = 0;
+			var X1, Y1, X2, Y2;
+			if(f_x1[i] < canvas.width / 2) X1 = f_x1[i] + speed;
+			else X1 = f_x1[i] - speed;
+			Y1 = (X1*f_y2[i] + f_x2[i]*f_y1[i] - f_x1[i]*f_y2[i] - X1*f_y1[i]) / (f_x2[i] - f_x1[i]);
+			if(f_x2[i] < canvas.width / 2) X2 = f_x2[i] + speed;
+			else X2 = f_x2[i] - speed;
+			Y2 = (X2*f_y2[i] + f_x2[i]*f_y1[i] - f_x1[i]*f_y2[i] - X2*f_y1[i]) / (f_x2[i] - f_x1[i]);
+			f_x1[i] = X1; f_y1[i] = Y1; f_x2[i] = X2; f_y2[i] = Y2;
+		}
+		else
+		{	
+			idk[i] += idk[i] / 30;
+			//idk[i] = idk[i] * 1.032;
+			color_gradient[i]++;
+			explode(i);
+		}
+	}
+	xdd = 0;
+	for(var i = 0; i < fireworks; i++)
+		for(var j = 0; j < particle_per_firework; j++)
+			if(r[i][j] < 1) xdd++;
+	if(xd == fireworks && xdd == fireworks * particle_per_firework)
+	{
+		xd = 0;
+		start();
+	}
+}
+
+function explode(lin)
+{
+	var x,y,vx, xm, ym;
+	var spd = 0.001;
+	for(var j = 0; j < particle_per_firework; j++)
+	{
+		spd = 0.001;
+		xm = centerx[lin];
+		ym = centery[lin];
+		x = xparticle[lin][j];
+		y = yparticle[lin][j];
+		vx = (x - xm) / idk[lin];
+		if(idk[lin] < 175)
+		{
+			xparticle[lin][j] += vx;
+			yparticle[lin][j] = (x*ym + xparticle[lin][j]*y - xparticle[lin][j]*ym - xm*y) / (x - xm);
+			if(f_x2[lin] > f_x1[lin]) centerx[lin] -= spd;
+			else centerx[lin] += spd;
+			centery[lin] *= 1.000017;
+			//centery[lin] = (f_x2[lin]*f_y1[lin] + f_y2[lin]*centerx[lin] - centerx[lin]*f_y1[lin] - f_x1[lin]*f_y2[lin]) / (f_x2[lin] - f_x1[lin]);
+		}
+		else
+		{
+			if(r_rand_speed[lin][j] > 0) r_rand_speed[lin][j] --;
+			else 
+			{
+				r_rand_speed[lin][j] = random_number(r_dicrease_rate);
+				if(r[lin][j] > 0) r[lin][j] --;
+			}
+			x = xparticle[lin][j];
+			y = yparticle[lin][j];
+			xparticle[lin][j] += vx;
+			yparticle[lin][j] = (x*ym + xparticle[lin][j]*y - xparticle[lin][j]*ym - xm*y) / (x - xm);
+			var dist;
+			dist = Math.sqrt((x - xparticle[lin][j])*(x - xparticle[lin][j]) + (y - yparticle[lin][j])*(y - yparticle[lin][j]));
+			if(dist < 0.5) 
+			{
+				// acceleration
+				yparticle[lin][j] += 0.3;
+			}
+		}
+	}
+}
+
+function spawnParticle(lin)
+{
+	var xm = canvas.width / 2;
+	var ym = canvas.height / 2;
+	var x = 0, y = 0;
+	for(var j = 0; j < particle_per_firework; j++)
+	{
+		while(1)
+		{
+			x = - explosion[lin]/2 + random_number(explosion[lin]);
+			y = - explosion[lin]/2 + random_number(explosion[lin]);
+			if(x*x + y*y < explosion[lin]) break;
+		}
+		xparticle[lin][j] = canvas.width/2 + x;
+		yparticle[lin][j] = canvas.height/2 + y;
+	}
+}
+
+function spawnFirework()
+{
+	var xm = canvas.width / 2;
+	var ym = canvas.height / 2;
+	var semn, l;
+	x1 = random_number(200) + canvas.width / 2 - 100;
+	while(x1 - xm > - 10 && x1 - xm < 10) x1 = random_number(200) + canvas.width / 2 - 100;
+	y1 = canvas.height - 50 - random_number(30);
+	if(x1 < canvas.width / 2) semn = 1;
+	else semn = -1;
+	x2 = x1;
+	while(1)
+	{
+		x2 += semn*0.01;
+		y2 = (x1*ym + x2*y1 - x2*ym - xm*y1) / (x1 - xm);
+		l = Math.sqrt((x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1));
+		if(l - trail > -0.2 && l - trail < 0.2) break;
+	}
+}
+
+function colorCircle(X,Y,r,drawColor,F) 
+{
+	var gradient = [];
+	//canvasContext.fillStyle = drawColor;
+	if(drawColor == "blue")
+	{
+		gradient[0] = "#ffffff";
+		gradient[1] = "#e7ffff";
+		gradient[2] = "#d0d0ff";
+		gradient[3] = "#b9b9ff";
+		gradient[4] = "#a2a2ff";
+		gradient[5] = "#8b8bff";
+		gradient[6] = "#7373ff";
+		gradient[7] = "#5c5cff";
+		gradient[8] = "#4545ff";
+		gradient[9] = "#2e2eff";
+		gradient[10] = "#1717ff";
+		gradient[11] = "#0000ff";
+	}
+	else if(drawColor == "green")
+	{
+		gradient[0] = "#ffffff";
+		gradient[1] = "#e7f3e7";
+		gradient[2] = "#d0e7d0";
+		gradient[3] = "#b9dcb9";
+		gradient[4] = "#a2d0a2";
+		gradient[5] = "#8bc58b";
+		gradient[6] = "#73b973";
+		gradient[7] = "#5cae5c";
+		gradient[8] = "#45a245";
+		gradient[9] = "#2e972e";
+		gradient[10] = "#178b17";
+		gradient[11] = "#008000";
+	}
+	else if(drawColor == "cyan")
+	{
+		gradient[0] = "#ffffff";
+		gradient[1] = "#e7ffff";
+		gradient[2] = "#d0ffff";
+		gradient[3] = "#b9ffff";
+		gradient[4] = "#a2ffff";
+		gradient[5] = "#8bffff";
+		gradient[6] = "#73ffff";
+		gradient[7] = "#5cffff";
+		gradient[8] = "#45ffff";
+		gradient[9] = "#2effff";
+		gradient[10] = "#17ffff";
+		gradient[11] = "#00ffff";
+	}
+	else if(drawColor == "lime")
+	{
+		gradient[0] = "#ffffff";
+		gradient[1] = "#e7ffe7";
+		gradient[2] = "#d0ffd0";
+		gradient[3] = "#b9ffb9";
+		gradient[4] = "#a2ffa2";
+		gradient[5] = "#8bff8b";
+		gradient[6] = "#73ff73";
+		gradient[7] = "#5cff5c";
+		gradient[8] = "#45ff45";
+		gradient[9] = "#2eff2e";
+		gradient[10] = "#17ff17";
+		gradient[11] = "#00ff00";
+	}
+	else if(drawColor == "maroon")
+	{
+		gradient[0] = "#ffffff";
+		gradient[1] = "#f3e7e7";
+		gradient[2] = "#e7d0d0";
+		gradient[3] = "#dcb9b9";
+		gradient[4] = "#d0a2a2";
+		gradient[5] = "#c58b8b";
+		gradient[6] = "#b97373";
+		gradient[7] = "#ae5c5c";
+		gradient[8] = "#a24545";
+		gradient[9] = "#972e2e";
+		gradient[10] = "#8b1717";
+		gradient[11] = "#800000";
+	}
+	else if(drawColor == "navy")
+	{
+		gradient[0] = "#ffffff";
+		gradient[1] = "#e7e7f3";
+		gradient[2] = "#d0d0e7";
+		gradient[3] = "#b9b9dc";
+		gradient[4] = "#a2a2d0";
+		gradient[5] = "#8b8bc5";
+		gradient[6] = "#7373b9";
+		gradient[7] = "#5c5cae";
+		gradient[8] = "#4545a2";
+		gradient[9] = "#2e2e97";
+		gradient[10] = "#17178b";
+		gradient[11] = "#000080";
+	}
+	else if(drawColor == "purple")
+	{
+		gradient[0] = "#ffffff";
+		gradient[1] = "#f3e7f3";
+		gradient[2] = "#e7d0e7";
+		gradient[3] = "#dcb9dc";
+		gradient[4] = "#d0a2d0";
+		gradient[5] = "#c58bc5";
+		gradient[6] = "#b973b9";
+		gradient[7] = "#ae5cae";
+		gradient[8] = "#a245a2";
+		gradient[9] = "#972e97";
+		gradient[10] = "#8b178b";
+		gradient[11] = "#800080";
+	}
+	else if(drawColor == "red")
+	{
+		gradient[0] = "#ffffff";
+		gradient[1] = "#ffe7e7";
+		gradient[2] = "#ffd0d0";
+		gradient[3] = "#ffb9b9";
+		gradient[4] = "#ffa2a2";
+		gradient[5] = "#ff8b8b";
+		gradient[6] = "#ff7373";
+		gradient[7] = "#ff5c5c";
+		gradient[8] = "#ff4545";
+		gradient[9] = "#ff2e2e";
+		gradient[10] = "#ff1717";
+		gradient[11] = "#ff0000";
+	}
+	else if(drawColor == "yellow")
+	{
+		gradient[0] = "#ffffff";
+		gradient[1] = "#ffffe7";
+		gradient[2] = "#ffffd0";
+		gradient[3] = "#ffffb9";
+		gradient[4] = "#ffffa2";
+		gradient[5] = "#ffff8b";
+		gradient[6] = "#ffff73";
+		gradient[7] = "#ffff5c";
+		gradient[8] = "#ffff45";
+		gradient[9] = "#ffff2e";
+		gradient[10] = "#ffff17";
+		gradient[11] = "#ffff00";
+	}
+	else if(drawColor == "gold")
+	{
+		gradient[0] = "#ffffff";
+		gradient[1] = "#fffbe7";
+		gradient[2] = "#fff7d0";
+		gradient[3] = "#fff4b9";
+		gradient[4] = "#fff0a2";
+		gradient[5] = "#ffec8b";
+		gradient[6] = "#ffe973";
+		gradient[7] = "#ffe55c";
+		gradient[8] = "#ffe145";
+		gradient[9] = "#ffde2e";
+		gradient[10] = "#ffda17";
+		gradient[11] = "#ffd700";
+	}
+	else if(drawColor == "pink")
+	{
+		gradient[0] = "#ffffff";
+		gradient[1] = "#fff9fa";
+		gradient[2] = "#fff3f5";
+		gradient[3] = "#ffedf0";
+		gradient[4] = "#ffe8ec";
+		gradient[5] = "#ffe2e7";
+		gradient[6] = "#ffdce2";
+		gradient[7] = "#ffd6dd";
+		gradient[8] = "#ffd1d9";
+		gradient[9] = "#ffcbd4";
+		gradient[10] = "#ffc5cf";
+		gradient[11] = "#ffc0cb";
+	}
+	else if(drawColor == "orange")
+	{
+		gradient[0] = "#ffffff";
+		gradient[1] = "#fff6e7";
+		gradient[2] = "#ffeed0";
+		gradient[3] = "#ffe6b9";
+		gradient[4] = "#ffdea2";
+		gradient[5] = "#ffd68b";
+		gradient[6] = "#ffcd73";
+		gradient[7] = "#ffc55c";
+		gradient[8] = "#ffbd45";
+		gradient[9] = "#ffb52e";
+		gradient[10] = "#ffad17";
+		gradient[11] = "#ffa500";
+	}
+	var gr = Math.floor(color_gradient[F]/gradient_speed);
+	if(gr > 11) gr = 11;
+	canvasContext.fillStyle = gradient[gr];
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+	canvasContext.stroke();
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, drawColor)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==37)
+	{
+		alert("left");
+	}
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+
+</script>
+</body>
+</html>

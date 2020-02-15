@@ -1,0 +1,179 @@
+<html>
+
+<head>
+
+	<title>PUBG circle</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<body>
+<style>body{margin:5;}</style>
+<p align = 'center'>
+<canvas id ="gameCanvas"></canvas>
+</p>
+
+<script>
+
+var canvas;
+var canvasContext;
+canvas = document.getElementById('gameCanvas');
+canvasContext = canvas.getContext('2d');
+canvas.width = 1006;
+canvas.height = 1006;
+
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+var m_x, m_y;
+const fps = 600;
+var x_white, y_white, x_blue, y_blue, speed = 0.1;
+var r_white, r_blue;
+var meter = canvas.width / 8000;
+var D = [];
+var nr = 1;
+
+window.onload = function() 
+{
+	init();
+	setInterval(game, 1000/fps);	
+}
+
+function init()
+{
+	D[1] = 4550;
+	D[2] = 2970;
+	D[3] = 1480;
+	D[4] = 740;
+	D[5] = 360;
+	D[6] = 175;
+	D[7] = 90;
+	D[8] = 40;
+	r_white = (D[nr]/2)*meter;
+	x_white = random_number(4000)*meter + 2000*meter;
+	y_white = random_number(4000)*meter + 2000*meter;
+	r_blue = 5640 * meter;
+	x_blue = canvas.width / 2;
+	y_blue = canvas.height / 2;
+}
+
+function game()
+{
+	drawEverything();
+	moveEverything();
+}
+
+function moveEverything() 
+{
+	var l,k;
+	if(nr < 9)
+	{
+		l = Math.sqrt((x_blue-x_white) * (x_blue-x_white) + (y_blue-y_white) * (y_blue-y_white));
+		k = (l / speed) - 1;
+		x_blue = (1/(1+k)) * x_white + (k/(1+k)) * x_blue;
+		y_blue = (1/(1+k)) * y_white + (k/(1+k)) * y_blue;
+		r_blue -= speed;
+		if(r_blue - r_white < 0.001)
+		{
+			nr++;
+			r_white = (D[nr]/2)*meter;
+			var dist = 1000;
+			while(dist > r_blue - r_white)
+			{
+				x_white = random_number(canvas.width);
+				y_white = random_number(canvas.height);
+				dist = Math.sqrt((x_blue-x_white) * (x_blue-x_white) + (y_blue-y_white) * (y_blue-y_white));
+			}			
+		}
+	}
+}
+
+function drawEverything() 
+{
+	var image = new Image();
+	image.src = "Images/PUBG.jpg";
+	canvasContext.drawImage(image,0,0,canvas.width,canvas.height);
+	for(i = 0; i < canvas.width; i += canvas.width / 8)
+		line(i,0,i,canvas.height,"yellow");
+	for(i = 0; i < canvas.height; i += canvas.height / 8)
+		line(0,i,canvas.width,i,"yellow");	
+	colorCircle(x_white,y_white,r_white,"white");
+	colorCircle(x_blue,y_blue,r_blue,"blue");
+}
+
+function showMessage(x_coord,y_coord,msg)
+{
+	canvasContext.fillStyle = 'white';
+	canvasContext.font = '50px Segoe UI';
+	canvasContext.textAlign = 'center';
+	canvasContext.fillText(msg, x_coord, y_coord);
+}
+
+function colorCircle(X,Y,r,drawColor) 
+{
+
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.stroke();
+}
+
+function colorRect(leftX,topY,width,height,drawColor) 
+{
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function line(x1, y1, x2, y2, drawColor)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+function keyPush(evt) 
+{
+	if(evt.keyCode==37)
+	{
+		alert("left");
+	}
+}
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+document.addEventListener("keydown",keyPush);
+
+canvas.addEventListener("mousemove",mouse_move);
+
+function mouse_move(evt) 
+{
+	var mousePos = calculateMousePos(evt);
+	m_x = mousePos.x;
+	m_y = mousePos.y;
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+
+</script>
+</body>
+</html>

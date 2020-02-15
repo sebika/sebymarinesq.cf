@@ -1,0 +1,148 @@
+<html>
+
+<head>
+
+	<title>Starfield</title>
+	<link rel="icon" href="Images/icon.png" type="image/png">
+
+</head>
+
+<canvas id ="gameCanvas" width="800" height ="600"></canvas>
+
+<script>
+
+var colors     = ["aqua",  "black", "blue",  "fuchsia",
+                     "green", "cyan",  "lime",  "maroon",
+                     "navy",  "olive", "purple","red",
+                     "silver","teal",  "yellow","azure",
+                     "gold",  "bisque","pink",  "orange"];
+
+var canvas;
+var canvasContext;
+var speed = 5;
+var acceleration = 0.01;
+var pos_x = [];
+var pos_y = [];
+var number_of_stars = 150;
+var SPD = [];
+var r = [];
+var c = [];
+
+var pos_x1 = [];
+var pos_y1 = [];
+
+window.onload = function() {
+	
+	canvas = document.getElementById('gameCanvas');
+	canvasContext = canvas.getContext('2d');
+	
+	// frames per second
+	var fps = 300;
+	
+	for (var i = 0; i <= number_of_stars; i++)
+	{
+		pos_x[i] = random_number(canvas.width);
+		pos_y[i] = random_number(canvas.height);
+		pos_x1[i] = 0;
+		pos_y1[i] = 0;
+		SPD[i] = 0;
+		r[i] = 0;
+		c[i] = colors[random_number(20)];
+	}
+	setInterval(starfield, 1000/fps);
+
+}
+
+function starfield()
+{
+	drawEverything();
+	moveEverything();
+}
+
+function moveEverything() 
+{
+	var vx, vy;
+	var Mx = canvas.width / 2;
+	var	My = canvas.height / 2;
+	var m;
+	for (var i = 0; i <= number_of_stars; i++)
+	{
+		pos_x1[i] = pos_x[i];
+		pos_y1[i] = pos_y[i];
+		if (pos_x[i] >= Mx)
+		{
+			pos_y[i] = ( - Mx*pos_y[i] - (pos_x[i]+SPD[i])*My  + (pos_x[i]+SPD[i])*pos_y[i] + pos_x[i]*My) / (pos_x[i] - Mx);
+			pos_x[i] +=SPD[i];
+		}
+		else
+		{
+			pos_y[i] = ( - Mx*pos_y[i] - (pos_x[i]-SPD[i])*My  + (pos_x[i]-SPD[i])*pos_y[i] + pos_x[i]*My) / (pos_x[i] - Mx);
+			pos_x[i] -=SPD[i];
+		}
+		if (pos_x[i] < 0 || pos_x[i] > canvas.width || pos_y[i] < 0 || pos_y[i] > canvas.height) 
+		{
+			pos_x[i] = random_number(canvas.width);
+			pos_y[i] = random_number(canvas.height);
+			pos_x1[i] = -5;
+			pos_y1[i] = -5;
+			SPD[i] = 0;
+		} 
+		else SPD[i] += acceleration;
+		r[i] = SPD[i] * 2;
+	}
+}
+
+function drawEverything() 
+{
+	colorRect(0,0,canvas.width,canvas.height,'black');
+	for (var i = 0; i <= number_of_stars; i++)
+	{
+		var red, green, blue;
+		const xd = 0.2;
+		red = canvas.width / 2 - pos_x[i];
+		green = canvas.height / 2 - pos_y[i];
+		if(red < 0) red = -red;
+		if(green < 0) green = -green;
+		blue = 0;
+		red = Math.floor(red / xd);
+		green = Math.floor(green / xd);
+		blue = Math.floor(blue / xd);
+		colorCircle(pos_x[i], pos_y[i], r[i], red, green, blue);
+		/*if ( pos_x1[i] != -5 &&   pos_y1[i] != -5)
+			line(pos_x1[i], pos_y1[i], pos_x[i], pos_y[i], c[i]);*/
+	}	
+}
+
+function colorCircle(X,Y,r,R,G,B) {
+
+	canvasContext.fillStyle = 'rgb(' + R + ', ' + G + ',' + B + ')';
+	canvasContext.beginPath();
+	canvasContext.arc(X, Y, r, 0,Math.PI*2, true);
+	canvasContext.fill();
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) {
+
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX,topY,width,height);
+}
+
+function random_number(MaxNumber)
+{
+	return Math.floor(Math.random()*(MaxNumber))+1;
+}
+
+function line(x1, y1, x2, y2, drawColor)
+{
+	canvasContext.strokeStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.moveTo(x1,y1);
+	canvasContext.lineTo(x2,y2);
+	canvasContext.stroke();
+}
+
+
+</script>
+
+</html>
